@@ -1,0 +1,49 @@
+#include <QCoreApplication>
+#include <QTcpServer>
+#include <QTcpSocket>
+#include <QString>
+#include <QDebug>
+#include<QTcpServer>
+#include<QTcpSocket>
+
+int main()
+{
+
+    QTcpServer Server;
+
+    if(Server.listen(QHostAddress::Any,6006))
+    {
+
+        Server.waitForNewConnection(-1);
+
+        QTcpSocket *socket = Server.nextPendingConnection();
+
+        while(socket->state() == QAbstractSocket::ConnectedState)
+        {
+
+            if(socket->waitForReadyRead(-1))
+            {
+
+                QByteArray byte = socket->readAll();
+
+                std::string message = std::string(byte.constData(),byte.length());
+
+                std::string new_message = "start ";
+                //main work
+                if(message.length() > 0)
+                {
+
+                    new_message += message;
+
+                    QByteArray new_byte(new_message.c_str(),new_message.length());
+
+                    socket->write(new_byte);
+
+                }
+
+            }
+
+        }
+
+    }
+}
