@@ -3,11 +3,15 @@
 #include "sign_in.h"
 #include "forgot_password.h"
 #include "customer.h"
+#include "menu_restaurant.h"
 #include<QString>
 #include<QFile>
 #include<QTextStream>
 #include<QStringList>
 #include<QMessageBox>
+#include <QSqlDatabase>
+#include <QSqlQuery>
+#include <QSqlError>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -96,146 +100,49 @@ void MainWindow::click_login_button()
 
 void MainWindow::on_login_button_clicked()
 {
-
-    QString username_line;
-
-    QString password_line;
-
-    username_line = ui->username_lineedit->text();
-
-    password_line = ui->password_lineedit->text();
-
+    QString username_line = ui->username_lineedit->text();
+    QString password_line = ui->password_lineedit->text();
     bool state = false;
 
-    QFile file_1(QString(SRC_PATH) + "files/system_manage_list.txt");
-
-    if(file_1.open(QIODevice::ReadOnly | QIODevice::Text))
-    {
-
-        QTextStream in(&file_1);
-
-        QStringList strlist;
-
-        while(!in.atEnd())
-        {
-
-            strlist.append(in.readLine());
-
-        }
-
-        file_1.close();
-
-        for(int i = 0; i < strlist.size() - 1; i += 2)
-        {
-
-            const QString &line_1 = strlist.at(i);
-
-            const QString &line_2 = strlist.at(i+1);
-
-            if(username_line == line_1 && password_line == line_2)
-            {
-
-                state = true;
-
-                QMessageBox::information(this,"success","username and password are correct");//change
-
-                //system_manager
-
-            }
-
-        }
-
+    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
+    db.setDatabaseName("iut_food.db");
+    if (!db.open()) {
+        QMessageBox::critical(this, "Database Error", db.lastError().text());
+        return;
     }
+    // Create users table if it doesn't exist
+    QSqlQuery createQuery;
+    createQuery.exec("CREATE TABLE IF NOT EXISTS users ("
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                    "username TEXT NOT NULL UNIQUE,"
+                    "password TEXT NOT NULL,"
+                    "user_type TEXT NOT NULL CHECK(user_type IN ('customer', 'manager', 'restaurant'))"
+                    ");");
 
-    QFile file_2(QString(SRC_PATH) + "files/restaurant_managers_list.txt");
-
-    if(file_2.open(QIODevice::ReadOnly | QIODevice::Text))
-    {
-
-        QTextStream in(&file_2);
-
-        QStringList strlist;
-
-        while(!in.atEnd())
-        {
-
-            strlist.append(in.readLine());
-
-        }
-
-        file_2.close();
-
-        for(int i = 0; i < strlist.size() - 1; i += 2)
-        {
-
-            const QString &line_1 = strlist.at(i);
-
-            const QString &line_2 = strlist.at(i+1);
-
-            if(username_line == line_1 && password_line == line_2)
-            {
-
-                state = true;
-
-                QMessageBox::information(this,"success","username and password are correct");//change
-
-                // restaurant_manager
-
-            }
-
+    QSqlQuery query;
+    query.prepare("SELECT user_type FROM users WHERE username = ? AND password = ?");
+    query.addBindValue(username_line);
+    query.addBindValue(password_line);
+    if (query.exec() && query.next()) {
+        QString userType = query.value(0).toString();
+        state = true;
+        if (userType == "customer") {
+            customer *person = new customer();
+            person->setAttribute(Qt::WA_DeleteOnClose);
+            person->showMaximized();
+            this->close();
+            return;
+        } else if (userType == "manager" || userType == "restaurant") {
+            menu_restaurant *mr = new menu_restaurant();
+            mr->setAttribute(Qt::WA_DeleteOnClose);
+            mr->showMaximized();
+            this->close();
+            return;
         }
     }
-
-    QFile file_3(QString(SRC_PATH) + "files/customers_list.txt");
-
-    if(file_3.open(QIODevice::ReadOnly | QIODevice::Text))
-    {
-
-        QTextStream in(&file_3);
-
-        QStringList strlist;
-
-        while(!in.atEnd())
-        {
-
-            strlist.append(in.readLine());
-
-        }
-
-        file_3.close();
-
-        for(int i = 0; i < strlist.size() - 1; i += 2)
-        {
-
-            const QString &line_1 = strlist.at(i);
-
-            const QString &line_2 = strlist.at(i+1);
-
-            if(username_line == line_1 && password_line == line_2)
-            {
-
-                state = true;
-
-                customer *person = new customer();
-
-                person->setAttribute(Qt::WA_DeleteOnClose);
-
-                person->show();
-
-                this->close();
-
-            }
-
-        }
+    if (!state) {
+        QMessageBox::warning(this, "fail", "username or password is not correct");
     }
-
-    if(state == false)
-    {
-
-        QMessageBox::warning(this,"fail","username or password is not correct");
-
-    }
-
 }
 
 void MainWindow::send_message()

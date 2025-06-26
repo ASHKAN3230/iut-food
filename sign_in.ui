@@ -276,6 +276,19 @@ font: 10pt &quot;Segoe UI&quot;;</string>
       <string>manager</string>
      </property>
     </widget>
+    <widget class="QRadioButton" name="restaurant_radiobutton">
+     <property name="geometry">
+      <rect>
+       <x>190</x>
+       <y>240</y>
+       <width>100</width>
+       <height>18</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>restaurant</string>
+     </property>
+    </widget>
    </widget>
   </widget>
  </widget>

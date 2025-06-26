@@ -4,6 +4,9 @@
 #include<QString>
 #include<QFile>
 #include<QMessageBox>
+#include <QSqlDatabase>
+#include <QSqlQuery>
+#include <QSqlError>
 
 sign_in::sign_in(QWidget *parent)
     : QWidget(parent)
@@ -71,58 +74,46 @@ void sign_in::click_on_sign_button()
 
 void sign_in::on_sign_in_button_clicked()
 {
-
-    QString username_line;
-
-    QString password_line;
-
-    username_line = ui->username_lineedit->text();
-
-    password_line = ui->password_lineedit->text();
-
-    if(ui->manager_radiobutton->isChecked())
-    {
-
-        QFile file_3("files/restaurant_managers_list.txt");
-
-        if(file_3.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append))
-        {
-
-            QTextStream out(&file_3);
-
-            out << username_line << "\n";
-
-            out << password_line << "\n";
-
-            file_3.close();
-
-        }
-
-        QMessageBox::information(this,"success","sgin in is successful");
-
-    }
-    else if(ui->customer_radiobutton->isChecked())
-    {
-
-        QFile file_4("files/customers_list.txt");
-
-        if(file_4.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append))
-        {
-
-            QTextStream out(&file_4);
-
-            out << username_line << "\n";
-
-            out << password_line << "\n";
-
-            file_4.close();
-
-        }
-
-        QMessageBox::information(this,"success","sgin in is successful");
-
+    QString username_line = ui->username_lineedit->text();
+    QString password_line = ui->password_lineedit->text();
+    QString userType;
+    if(ui->manager_radiobutton->isChecked()) {
+        userType = "manager";
+    } else if(ui->customer_radiobutton->isChecked()) {
+        userType = "customer";
+    } else if(ui->restaurant_radiobutton && ui->restaurant_radiobutton->isChecked()) {
+        userType = "restaurant";
+    } else {
+        QMessageBox::warning(this, "fail", "Please select a user type");
+        return;
     }
 
+    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
+    db.setDatabaseName("iut_food.db");
+    if (!db.open()) {
+        QMessageBox::critical(this, "Database Error", db.lastError().text());
+        return;
+    }
+    // Create users table if it doesn't exist
+    QSqlQuery createQuery;
+    createQuery.exec("CREATE TABLE IF NOT EXISTS users ("
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                    "username TEXT NOT NULL UNIQUE,"
+                    "password TEXT NOT NULL,"
+                    "user_type TEXT NOT NULL CHECK(user_type IN ('customer', 'manager', 'restaurant'))"
+                    ");");
+
+    QSqlQuery query;
+    query.prepare("INSERT INTO users (username, password, user_type) VALUES (?, ?, ?)");
+    query.addBindValue(username_line);
+    query.addBindValue(password_line);
+    query.addBindValue(userType);
+    if (query.exec()) {
+        QMessageBox::information(this, "success", "Sign in is successful");
+        // Optionally, open the relevant page here
+    } else {
+        QMessageBox::warning(this, "fail", "Sign in failed: " + query.lastError().text());
+    }
 }
 
 void sign_in::send_message()
