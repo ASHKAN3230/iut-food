@@ -72,7 +72,7 @@ void rate::show_rates()
 
     QString comment;
 
-    QFile file_10("C:/Users/Asus/Desktop/customer-section/untitled/files/rate_list.txt");
+    QFile file_10("files/rate_list.txt");
 
     if(file_10.open(QIODevice::ReadOnly | QIODevice::Text))
     {
@@ -164,7 +164,7 @@ void rate::show_rates()
 void rate::on_save_button_clicked()
 {
 
-    QFile file_11("C:/Users/Asus/Desktop/customer-section/untitled/files/rate_list.txt");
+    QFile file_11("files/rate_list.txt");
 
     if(file_11.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append))
     {
@@ -305,4 +305,3 @@ void rate::receive_message()
     }
 
 }
-

@@ -107,7 +107,7 @@ void MainWindow::on_login_button_clicked()
 
     bool state = false;
 
-    QFile file_1("C:/Users/Asus/Desktop/customer-section/untitled/files/system_manage_list.txt");
+    QFile file_1(QString(SRC_PATH) + "files/system_manage_list.txt");
 
     if(file_1.open(QIODevice::ReadOnly | QIODevice::Text))
     {
@@ -147,7 +147,7 @@ void MainWindow::on_login_button_clicked()
 
     }
 
-    QFile file_2("C:/Users/Asus/Desktop/customer-section/untitled/files/restaurant_managers_list.txt");
+    QFile file_2(QString(SRC_PATH) + "files/restaurant_managers_list.txt");
 
     if(file_2.open(QIODevice::ReadOnly | QIODevice::Text))
     {
@@ -186,7 +186,7 @@ void MainWindow::on_login_button_clicked()
         }
     }
 
-    QFile file_3("C:/Users/Asus/Desktop/customer-section/untitled/files/customers_list.txt");
+    QFile file_3(QString(SRC_PATH) + "files/customers_list.txt");
 
     if(file_3.open(QIODevice::ReadOnly | QIODevice::Text))
     {
@@ -289,4 +289,3 @@ void MainWindow::receive_message()
         }
 
 }
-

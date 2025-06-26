@@ -55,4 +55,3 @@ private:
 };
 
 #endif // SHOPPING_BASKET_H
-

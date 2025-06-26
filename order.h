@@ -58,4 +58,3 @@ private:
 };
 
 #endif // ORDER_H
-

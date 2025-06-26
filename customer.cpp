@@ -45,7 +45,7 @@ customer::~customer()
 void customer::open_file()
 {
 
-    QFile file_8("C:/Users/Asus/Desktop/customer-section/untitled/files/restaurants_list.txt");
+    QFile file_8("files/restaurants_list.txt");
 
     QString line;
 
@@ -393,4 +393,3 @@ void customer::receive_message()
     }
 
 }
-

@@ -59,4 +59,3 @@ private:
 };
 
 #endif // RATE_H
-

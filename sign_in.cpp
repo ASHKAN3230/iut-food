@@ -68,6 +68,7 @@ void sign_in::click_on_sign_button()
 
 }
 
+
 void sign_in::on_sign_in_button_clicked()
 {
 
@@ -82,7 +83,7 @@ void sign_in::on_sign_in_button_clicked()
     if(ui->manager_radiobutton->isChecked())
     {
 
-        QFile file_3("C:/Users/Asus/Desktop/customer-section/untitled/files/restaurant_managers_list.txt");
+        QFile file_3("files/restaurant_managers_list.txt");
 
         if(file_3.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append))
         {
@@ -103,7 +104,7 @@ void sign_in::on_sign_in_button_clicked()
     else if(ui->customer_radiobutton->isChecked())
     {
 
-        QFile file_4("C:/Users/Asus/Desktop/customer-section/untitled/files/customers_list.txt");
+        QFile file_4("files/customers_list.txt");
 
         if(file_4.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append))
         {
@@ -183,4 +184,3 @@ void sign_in::receive_message()
     }
 
 }
-

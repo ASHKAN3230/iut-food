@@ -68,6 +68,7 @@ void forgot_password::on_back_button_2_clicked()
 
 }
 
+
 void forgot_password::on_forgot_password_button_clicked()
 {
 
@@ -77,7 +78,7 @@ void forgot_password::on_forgot_password_button_clicked()
 
     bool count = false;
 
-    QFile file_5("C:/Users/Asus/Desktop/customer-section/untitled/files/system_manage_list.txt");
+    QFile file_5("files/system_manage_list.txt");
 
     if(file_5.open(QIODevice::ReadOnly | QIODevice::Text))
     {
@@ -115,7 +116,7 @@ void forgot_password::on_forgot_password_button_clicked()
 
     }
 
-    QFile file_6("C:/Users/Asus/Desktop/customer-section/untitled/files/restaurant_managers_list.txt");
+    QFile file_6("files/restaurant_managers_list.txt");
 
     if(file_6.open(QIODevice::ReadOnly | QIODevice::Text))
     {
@@ -152,7 +153,7 @@ void forgot_password::on_forgot_password_button_clicked()
         }
     }
 
-    QFile file_7("C:/Users/Asus/Desktop/customer-section/untitled/files/customers_list.txt");
+    QFile file_7("files/customers_list.txt");
 
     if(file_7.open(QIODevice::ReadOnly | QIODevice::Text))
     {
@@ -257,4 +258,3 @@ void forgot_password::receive_message()
     }
 
 }
-

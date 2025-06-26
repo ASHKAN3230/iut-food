@@ -83,6 +83,8 @@ void order::show_orders()
 
     ui->bord_ListWidget->setItemWidget(li,label);
 
+    ++rate::order_count;
+
 }
 
 void order::click_back_button()

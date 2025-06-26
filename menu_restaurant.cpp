@@ -46,7 +46,7 @@ int menu_restaurant::index = 0;
 void menu_restaurant::open_menu_file()
 {
 
-    QFile file_9("C:/Users/Asus/Desktop/customer-section/untitled/files/menu_list.txt");
+    QFile file_9("files/menu_list.txt");
 
     if(file_9.open(QIODevice::ReadOnly | QIODevice::Text))
     {

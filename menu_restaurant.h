@@ -57,4 +57,3 @@ private:
 };
 
 #endif // MENU_RESTAURANT_H
-

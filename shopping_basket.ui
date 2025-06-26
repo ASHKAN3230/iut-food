@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>shopping_basket</class>
+ <widget class="QWidget" name="shopping_basket">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1221</width>
+    <height>812</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">background-color: rgb(85, 0, 0);</string>
+  </property>
+  <widget class="QWidget" name="widget" native="true">
+   <property name="geometry">
+    <rect>
+     <x>350</x>
+     <y>320</y>
+     <width>511</width>
+     <height>411</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">background-color: rgba(255,255,255,20);
+border-top-right-radius: 0px;
+border-bottom-right-radius: 0px;
+border-bottom-left-radius: 0px;
+border-top-left-radius: 0px;</string>
+   </property>
+   <widget class="QPushButton" name="back_button">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>360</y>
+      <width>491</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">color: rgb(255, 255, 255);
+font: 700 16pt &quot;Segoe UI&quot;;
+background-color: rgba(0,0,0,0);
+border: none;
+border-bottom: 1px solid rgba(255,0,0,200);
+border-top: 1px solid rgba(255,0,0,200);
+border-left: 1px solid rgba(255,0,0,200);
+border-right: 1px solid rgba(255,0,0,200);
+</string>
+    </property>
+    <property name="text">
+     <string>Back</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="save_order_button">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>320</y>
+      <width>491</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">color: rgb(255, 255, 255);
+font: 700 16pt &quot;Segoe UI&quot;;
+background-color: rgba(0,0,0,0);
+border: none;
+border-bottom: 1px solid rgba(255,0,0,200);
+border-top: 1px solid rgba(255,0,0,200);
+border-left: 1px solid rgba(255,0,0,200);
+border-right: 1px solid rgba(255,0,0,200);
+</string>
+    </property>
+    <property name="text">
+     <string>Save Order</string>
+    </property>
+   </widget>
+   <widget class="QListWidget" name="bord_ListWidget">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>11</y>
+      <width>491</width>
+      <height>271</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">border-top-right-radius: 0px;
+border-bottom-right-radius: 0px;
+border-bottom-left-radius: 0px;
+border-top-left-radius: 0px;</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label">
+    <property name="geometry">
+     <rect>
+      <x>11</x>
+      <y>291</y>
+      <width>231</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">font: 700 16pt &quot;Segoe UI&quot;;
+color: rgb(255, 255, 255);
+background-color: rgba(255,255,255,0);</string>
+    </property>
+    <property name="text">
+     <string>total price</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="price_lineedit">
+    <property name="geometry">
+     <rect>
+      <x>250</x>
+      <y>290</y>
+      <width>251</width>
+      <height>20</height>
+     </rect>
+    </property>
+   </widget>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

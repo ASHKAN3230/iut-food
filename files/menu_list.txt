@@ -1,0 +1,4 @@
+sandwich
+port_sausage_sandwich
+sausage/onion/sault/turmeric/water/oil/tomato-paste/sandwich-bread
+50000
