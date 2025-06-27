@@ -20,7 +20,7 @@
    <item>
     <widget class="QLabel" name="titleLabel">
      <property name="text">
-      <string>🍽️ Restaurant Dashboard</string>
+      <string>Restaurant Dashboard</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
@@ -35,39 +35,60 @@
      <item>
       <widget class="QPushButton" name="shopping_basket_button">
        <property name="text">
-        <string>🛒 Shopping Basket</string>
+        <string>Shopping Basket</string>
        </property>
        <property name="toolTip">
         <string>View shopping basket</string>
        </property>
        <property name="styleSheet">
-        <string notr="true">font: 700 12pt 'Segoe UI'; color: #fff; background-color: #0077cc; border-radius: 8px; padding: 8px 20px; margin-right: 10px;</string>
+        <string notr="true">background-color: rgba(0,0,0,0);
+border: none;
+color: rgb(255, 255, 255);
+font: 700 12pt 'Segoe UI';
+border-bottom: 1px solid rgba(255,0,0,200);
+border-top: 1px solid rgba(255,0,0,200);
+border-left: 1px solid rgba(255,0,0,200);
+border-right: 1px solid rgba(255,0,0,200);</string>
        </property>
       </widget>
      </item>
      <item>
       <widget class="QPushButton" name="profile_button">
        <property name="text">
-        <string>🏠 Restaurant Profile</string>
+        <string>Restaurant Profile</string>
        </property>
        <property name="toolTip">
         <string>View or edit restaurant profile</string>
        </property>
        <property name="styleSheet">
-        <string notr="true">font: 700 12pt 'Segoe UI'; color: #fff; background-color: #008080; border-radius: 8px; padding: 8px 20px; margin-right: 10px;</string>
+        <string notr="true">background-color: rgba(0,0,0,0);
+border: none;
+color: rgb(255, 255, 255);
+font: 700 12pt 'Segoe UI';
+border-bottom: 1px solid rgba(255,0,0,200);
+border-top: 1px solid rgba(255,0,0,200);
+border-left: 1px solid rgba(255,0,0,200);
+border-right: 1px solid rgba(255,0,0,200);</string>
        </property>
       </widget>
      </item>
      <item>
       <widget class="QPushButton" name="logout_button">
        <property name="text">
-        <string>🚪 Logout</string>
+        <string>Logout</string>
        </property>
        <property name="toolTip">
         <string>Logout from dashboard</string>
        </property>
        <property name="styleSheet">
-        <string notr="true">font: 700 12pt 'Segoe UI'; color: #fff; background-color: #b22222; border-radius: 8px; padding: 8px 20px;</string>
+        <string notr="true">background-color: rgba(0,0,0,0);
+border: none;
+color: rgb(255, 255, 255);
+font: 700 12pt 'Segoe UI';
+border-bottom: 1px solid rgba(255,0,0,200);
+border-top: 1px solid rgba(255,0,0,200);
+border-left: 1px solid rgba(255,0,0,200);
+border-right: 1px solid rgba(255,0,0,200);</string>
        </property>
       </widget>
      </item>
@@ -171,52 +192,80 @@
             <item>
              <widget class="QPushButton" name="addFoodButton">
               <property name="text">
-               <string>➕ Add Food</string>
+               <string>Add Food</string>
               </property>
               <property name="toolTip">
                <string>Add a new food item</string>
               </property>
               <property name="styleSheet">
-               <string notr="true">color: #fff; font: 700 11pt 'Segoe UI'; background: #28a745; border-radius: 5px; padding: 6px 18px;</string>
+               <string notr="true">background-color: rgba(0,0,0,0);
+border: none;
+color: rgb(255, 255, 255);
+font: 700 12pt 'Segoe UI';
+border-bottom: 1px solid rgba(255,0,0,200);
+border-top: 1px solid rgba(255,0,0,200);
+border-left: 1px solid rgba(255,0,0,200);
+border-right: 1px solid rgba(255,0,0,200);</string>
               </property>
              </widget>
             </item>
             <item>
              <widget class="QPushButton" name="editFoodButton">
               <property name="text">
-               <string>✏️ Edit Food</string>
+               <string>Edit Food</string>
               </property>
               <property name="toolTip">
                <string>Edit selected food item</string>
               </property>
               <property name="styleSheet">
-               <string notr="true">color: #fff; font: 700 11pt 'Segoe UI'; background: #ffa500; border-radius: 5px; padding: 6px 18px;</string>
+               <string notr="true">background-color: rgba(0,0,0,0);
+border: none;
+color: rgb(255, 255, 255);
+font: 700 12pt 'Segoe UI';
+border-bottom: 1px solid rgba(255,0,0,200);
+border-top: 1px solid rgba(255,0,0,200);
+border-left: 1px solid rgba(255,0,0,200);
+border-right: 1px solid rgba(255,0,0,200);</string>
               </property>
              </widget>
             </item>
             <item>
              <widget class="QPushButton" name="deleteFoodButton">
               <property name="text">
-               <string>🗑️ Delete Food</string>
+               <string>Delete Food</string>
               </property>
               <property name="toolTip">
                <string>Delete selected food item</string>
               </property>
               <property name="styleSheet">
-               <string notr="true">color: #fff; font: 700 11pt 'Segoe UI'; background: #dc3545; border-radius: 5px; padding: 6px 18px;</string>
+               <string notr="true">background-color: rgba(0,0,0,0);
+border: none;
+color: rgb(255, 255, 255);
+font: 700 12pt 'Segoe UI';
+border-bottom: 1px solid rgba(255,0,0,200);
+border-top: 1px solid rgba(255,0,0,200);
+border-left: 1px solid rgba(255,0,0,200);
+border-right: 1px solid rgba(255,0,0,200);</string>
               </property>
              </widget>
             </item>
             <item>
              <widget class="QPushButton" name="clearFormButton">
               <property name="text">
-               <string>🧹 Clear Form</string>
+               <string>Clear Form</string>
               </property>
               <property name="toolTip">
                <string>Clear all input fields</string>
               </property>
               <property name="styleSheet">
-               <string notr="true">color: #fff; font: 700 11pt 'Segoe UI'; background: #6c757d; border-radius: 5px; padding: 6px 18px;</string>
+               <string notr="true">background-color: rgba(0,0,0,0);
+border: none;
+color: rgb(255, 255, 255);
+font: 700 12pt 'Segoe UI';
+border-bottom: 1px solid rgba(255,0,0,200);
+border-top: 1px solid rgba(255,0,0,200);
+border-left: 1px solid rgba(255,0,0,200);
+border-right: 1px solid rgba(255,0,0,200);</string>
               </property>
              </widget>
             </item>
@@ -272,26 +321,40 @@
           <item>
            <widget class="QPushButton" name="refreshOrdersButton">
             <property name="text">
-             <string>🔄 Refresh Orders</string>
+             <string>Refresh Orders</string>
             </property>
             <property name="toolTip">
              <string>Reload the list of orders</string>
             </property>
             <property name="styleSheet">
-             <string notr="true">color: #fff; font: 700 11pt 'Segoe UI'; background: #008080; border-radius: 5px; padding: 6px 18px;</string>
+             <string notr="true">background-color: rgba(0,0,0,0);
+border: none;
+color: rgb(255, 255, 255);
+font: 700 12pt 'Segoe UI';
+border-bottom: 1px solid rgba(255,0,0,200);
+border-top: 1px solid rgba(255,0,0,200);
+border-left: 1px solid rgba(255,0,0,200);
+border-right: 1px solid rgba(255,0,0,200);</string>
             </property>
            </widget>
           </item>
           <item>
            <widget class="QPushButton" name="updateStatusButton">
             <property name="text">
-             <string>✏️ Update Status</string>
+             <string>Update Status</string>
             </property>
             <property name="toolTip">
              <string>Update the status of the selected order</string>
             </property>
             <property name="styleSheet">
-             <string notr="true">color: #fff; font: 700 11pt 'Segoe UI'; background: #ffa500; border-radius: 5px; padding: 6px 18px;</string>
+             <string notr="true">background-color: rgba(0,0,0,0);
+border: none;
+color: rgb(255, 255, 255);
+font: 700 12pt 'Segoe UI';
+border-bottom: 1px solid rgba(255,0,0,200);
+border-top: 1px solid rgba(255,0,0,200);
+border-left: 1px solid rgba(255,0,0,200);
+border-right: 1px solid rgba(255,0,0,200);</string>
             </property>
            </widget>
           </item>
