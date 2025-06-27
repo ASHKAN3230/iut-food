@@ -44,15 +44,11 @@ public:
 
 signals:
 
-    void click_back();
-
     void click_shop();
 
     void click_server();
 
 public slots:
-    void on_back_button_clicked();
-
     void on_shopping_basket_button_clicked();
 
     void send_message();
@@ -66,6 +62,10 @@ public slots:
     void on_clearFormButton_clicked();
 
     void on_menuItem_selected();
+
+    void on_profile_button_clicked();
+
+    void on_logout_button_clicked();
 
 private:
     Ui::menu_restaurant *ui;

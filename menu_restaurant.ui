@@ -33,12 +33,75 @@ border-bottom-left-radius: 0px;
 border-top-left-radius: 0px;</string>
    </property>
    
+   <widget class="QPushButton" name="shopping_basket_button">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>10</y>
+       <width>200</width>
+       <height>35</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">color: rgb(255, 255, 255);
+font: 700 12pt &quot;Segoe UI&quot;;
+background-color: rgba(0,0,255,200);
+border: none;
+border-radius: 5px;</string>
+     </property>
+     <property name="text">
+      <string>Shopping Basket</string>
+     </property>
+    </widget>
+    
+    <widget class="QPushButton" name="profile_button">
+        <property name="geometry">
+            <rect>
+                <x>220</x>
+                <y>10</y>
+                <width>150</width>
+                <height>35</height>
+            </rect>
+        </property>
+        <property name="styleSheet">
+            <string notr="true">color: rgb(255, 255, 255);
+font: 700 12pt &quot;Segoe UI&quot;;
+background-color: rgba(0, 128, 128, 200);
+border: none;
+border-radius: 5px;</string>
+        </property>
+        <property name="text">
+            <string>Restaurant Profile</string>
+        </property>
+    </widget>
+
+    <widget class="QPushButton" name="logout_button">
+        <property name="geometry">
+            <rect>
+                <x>380</x>
+                <y>10</y>
+                <width>150</width>
+                <height>35</height>
+            </rect>
+        </property>
+        <property name="styleSheet">
+            <string notr="true">color: rgb(255, 255, 255);
+font: 700 12pt &quot;Segoe UI&quot;;
+background-color: rgba(178, 34, 34, 200);
+border: none;
+border-radius: 5px;</string>
+        </property>
+        <property name="text">
+            <string>Logout</string>
+        </property>
+    </widget>
+
    <!-- Food Management Section -->
    <widget class="QGroupBox" name="foodManagementGroup">
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>10</y>
+      <y>55</y>
       <width>947</width>
       <height>200</height>
      </rect>
@@ -283,9 +346,9 @@ border-radius: 5px;</string>
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>220</y>
+      <y>265</y>
       <width>947</width>
-      <height>400</height>
+      <height>434</height>
      </rect>
     </property>
     <property name="title">
@@ -302,55 +365,13 @@ font: 700 12pt &quot;Segoe UI&quot;;</string>
        <x>10</x>
        <y>30</y>
        <width>927</width>
-       <height>320</height>
+       <height>394</height>
       </rect>
      </property>
      <property name="styleSheet">
       <string notr="true">background-color: rgb(255, 255, 255);
 border: 1px solid rgb(200, 200, 200);
 border-radius: 3px;</string>
-     </property>
-    </widget>
-    
-    <widget class="QPushButton" name="shopping_basket_button">
-     <property name="geometry">
-      <rect>
-       <x>10</x>
-       <y>360</y>
-       <width>200</width>
-       <height>35</height>
-      </rect>
-     </property>
-     <property name="styleSheet">
-      <string notr="true">color: rgb(255, 255, 255);
-font: 700 12pt &quot;Segoe UI&quot;;
-background-color: rgba(0,0,255,200);
-border: none;
-border-radius: 5px;</string>
-     </property>
-     <property name="text">
-      <string>Shopping Basket</string>
-     </property>
-    </widget>
-    
-    <widget class="QPushButton" name="back_button">
-     <property name="geometry">
-      <rect>
-       <x>220</x>
-       <y>360</y>
-       <width>200</width>
-       <height>35</height>
-      </rect>
-     </property>
-     <property name="styleSheet">
-      <string notr="true">color: rgb(255, 255, 255);
-font: 700 12pt &quot;Segoe UI&quot;;
-background-color: rgba(128,128,128,200);
-border: none;
-border-radius: 5px;</string>
-     </property>
-     <property name="text">
-      <string>Back</string>
      </property>
     </widget>
    </widget>

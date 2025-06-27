@@ -3,6 +3,7 @@
 #include "customer.h"
 #include "shopping_basket.h"
 #include "restaurant_auth.h"
+#include "mainwindow.h"
 #include<QFile>
 #include<QLabel>
 #include<QTextStream>
@@ -23,8 +24,6 @@ menu_restaurant::menu_restaurant(const QString &username, QWidget *parent)
     ui->setupUi(this);
     currentRestaurantUsername = username;
 
-    connect(this, &menu_restaurant::click_back_button, this, &menu_restaurant::send_message);
-    connect(this, &menu_restaurant::receive_message, this, &menu_restaurant::on_back_button_clicked);
     connect(this, &menu_restaurant::click_shopping_basket_button, this, &menu_restaurant::send_message);
     connect(this, &menu_restaurant::receive_message, this, &menu_restaurant::on_shopping_basket_button_clicked);
     connect(ui->addFoodButton, &QPushButton::clicked, this, &menu_restaurant::on_addFoodButton_clicked);
@@ -32,6 +31,8 @@ menu_restaurant::menu_restaurant(const QString &username, QWidget *parent)
     connect(ui->deleteFoodButton, &QPushButton::clicked, this, &menu_restaurant::on_deleteFoodButton_clicked);
     connect(ui->clearFormButton, &QPushButton::clicked, this, &menu_restaurant::on_clearFormButton_clicked);
     connect(ui->bord_ListWidget, &QListWidget::itemClicked, this, &menu_restaurant::on_menuItem_selected);
+    connect(ui->profile_button, &QPushButton::clicked, this, &menu_restaurant::on_profile_button_clicked);
+    connect(ui->logout_button, &QPushButton::clicked, this, &menu_restaurant::on_logout_button_clicked);
 
     socket.connectToHost("127.0.0.1",6006);
     if(socket.waitForConnected(1000))
@@ -329,20 +330,6 @@ void menu_restaurant::on_menuItem_selected()
     }
 }
 
-void menu_restaurant::click_back_button()
-{
-    message = "back";
-    emit click_server();
-}
-
-void menu_restaurant::on_back_button_clicked()
-{
-    restaurant_auth *ra = new restaurant_auth(currentRestaurantUsername);
-    ra->setAttribute(Qt::WA_DeleteOnClose);
-    ra->showMaximized();
-    this->close();
-}
-
 void menu_restaurant::click_shopping_basket_button()
 {
     message = "shop";
@@ -354,6 +341,22 @@ void menu_restaurant::on_shopping_basket_button_clicked()
     shopping_basket *sb = new shopping_basket(currentRestaurantUsername);
     sb->setAttribute(Qt::WA_DeleteOnClose);
     sb->showMaximized();
+    this->close();
+}
+
+void menu_restaurant::on_profile_button_clicked()
+{
+    restaurant_auth *ra = new restaurant_auth(currentRestaurantUsername);
+    ra->setAttribute(Qt::WA_DeleteOnClose);
+    ra->showMaximized();
+    this->close();
+}
+
+void menu_restaurant::on_logout_button_clicked()
+{
+    MainWindow *mw = new MainWindow();
+    mw->setAttribute(Qt::WA_DeleteOnClose);
+    mw->show();
     this->close();
 }
 
@@ -383,7 +386,6 @@ void menu_restaurant::receive_message()
             if(message == "start back")
             {
                 message = "";
-                emit click_back();
             }
             else if(message == "start shop")
             {
