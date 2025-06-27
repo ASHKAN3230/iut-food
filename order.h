@@ -18,7 +18,7 @@ class order : public QWidget
     Q_OBJECT
 
 public:
-    explicit order(QWidget *parent = nullptr);
+    explicit order(const QString &username, QWidget *parent = nullptr);
 
     void click_back_button();
 
@@ -38,6 +38,8 @@ public:
 
     ~order();
 
+    void set_labels();
+
 signals:
 
     void click_back();
@@ -53,8 +55,11 @@ public slots:
 
     void on_order_tracking_button_clicked();
 
+    void on_rate_button_clicked();
+
 private:
     Ui::order *ui;
+    QString currentUsername;
 };
 
 #endif // ORDER_H

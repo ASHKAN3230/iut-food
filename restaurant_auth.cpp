@@ -10,7 +10,7 @@
 #include <QSqlError>
 #include <QApplication>
 
-restaurant_auth::restaurant_auth(QWidget *parent)
+restaurant_auth::restaurant_auth(const QString &username, QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::restaurant_auth)
     , menuExists(false)
@@ -18,6 +18,8 @@ restaurant_auth::restaurant_auth(QWidget *parent)
     , currentRestaurantId(-1)
 {
     ui->setupUi(this);
+
+    currentRestaurantUsername = username;
 
     connect(this, &restaurant_auth::click_back, this, &restaurant_auth::send_message);
     connect(this, &restaurant_auth::receive_message, this, &restaurant_auth::on_back_button_clicked);
@@ -33,10 +35,6 @@ restaurant_auth::restaurant_auth(QWidget *parent)
     {
         // receive_message();
     }
-
-    // Get current restaurant username from application properties or global variable
-    // For now, we'll use a simple approach - you can enhance this later
-    currentRestaurantUsername = "restaurant_user"; // This should be set from login
     
     check_restaurant_info_status();
     check_restaurant_menu_status();
@@ -368,7 +366,7 @@ void restaurant_auth::on_continue_button_clicked()
     }
     
     // Restaurant has complete info and menu, proceed to menu management
-    menu_restaurant *mr = new menu_restaurant();
+    menu_restaurant *mr = new menu_restaurant(currentRestaurantUsername);
     mr->setAttribute(Qt::WA_DeleteOnClose);
     mr->showMaximized();
     this->close();
@@ -392,7 +390,7 @@ void restaurant_auth::on_setup_menu_button_clicked()
         create_initial_menu();
         
         // Show menu management interface
-        menu_restaurant *mr = new menu_restaurant();
+        menu_restaurant *mr = new menu_restaurant(currentRestaurantUsername);
         mr->setAttribute(Qt::WA_DeleteOnClose);
         mr->showMaximized();
         this->close();

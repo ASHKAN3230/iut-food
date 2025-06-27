@@ -8,12 +8,17 @@
 #include<QListWidgetItem>
 #include<string>
 #include<QMessageBox>
+#include<QFile>
+#include<QDebug>
+#include<QDir>
 
-shopping_basket::shopping_basket(QWidget *parent)
+shopping_basket::shopping_basket(const QString &username, QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::shopping_basket)
 {
     ui->setupUi(this);
+
+    currentRestaurantUsername = username;
 
     connect(this, &shopping_basket::click_back_button, this, &shopping_basket::send_message);
 
@@ -36,6 +41,8 @@ shopping_basket::shopping_basket(QWidget *parent)
 
     ui->price_lineedit->setText(QString::number(sum));
 
+    set_lables();
+    set_items();
 }
 
 shopping_basket::~shopping_basket()
@@ -108,11 +115,11 @@ void shopping_basket::click_save_order_button()
 void shopping_basket::on_back_button_clicked()
 {
 
-    menu_restaurant *mr = new menu_restaurant();
+    menu_restaurant *mr = new menu_restaurant(currentRestaurantUsername);
 
     mr->setAttribute(Qt::WA_DeleteOnClose);
 
-    mr->show();
+    mr->showMaximized();
 
     this->close();
 
@@ -203,7 +210,7 @@ void shopping_basket::on_save_order_button_clicked()
 
     }
 
-    order *Order = new order();
+    order *Order = new order(currentRestaurantUsername);
 
     Order->setAttribute(Qt::WA_DeleteOnClose);
 
@@ -211,5 +218,20 @@ void shopping_basket::on_save_order_button_clicked()
 
     this->close();
 
+}
+
+void shopping_basket::set_lables()
+{
+    // Implementation of set_lables method
+}
+
+void shopping_basket::set_items()
+{
+    // Implementation of set_items method
+}
+
+void shopping_basket::on_order_button_clicked()
+{
+    // TODO: Implement this function
 }
 

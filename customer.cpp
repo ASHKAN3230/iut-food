@@ -10,11 +10,12 @@
 #include<QListWidgetItem>
 #include<QMessageBox>
 
-customer::customer(QWidget *parent)
+customer::customer(const QString &username, QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::customer)
 {
     ui->setupUi(this);
+    currentUsername = username;
 
     connect(this, &customer::click_search_button, this, &customer::send_message);
 
@@ -131,19 +132,12 @@ void customer::open_file()
 
 }
 
-void customer::open_next_window(int new_index)
+void customer::open_next_window(int index)
 {
-
-    menu_restaurant::index = new_index;
-
-    menu_restaurant *mr = new menu_restaurant();
-
+    menu_restaurant *mr = new menu_restaurant(currentUsername);
     mr->setAttribute(Qt::WA_DeleteOnClose);
-
-    mr->show();
-
+    mr->showMaximized();
     this->close();
-
 }
 
 void customer::click_search_button()

@@ -2,6 +2,7 @@
 #include "ui_menu_restaurant.h"
 #include "customer.h"
 #include "shopping_basket.h"
+#include "restaurant_auth.h"
 #include<QFile>
 #include<QLabel>
 #include<QTextStream>
@@ -13,22 +14,19 @@
 #include<QSqlQuery>
 #include<QSqlError>
 
-menu_restaurant::menu_restaurant(QWidget *parent)
+menu_restaurant::menu_restaurant(const QString &username, QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::menu_restaurant)
     , selectedItemIndex(-1)
+    , currentRestaurantId(-1)
 {
     ui->setupUi(this);
+    currentRestaurantUsername = username;
 
     connect(this, &menu_restaurant::click_back_button, this, &menu_restaurant::send_message);
-
     connect(this, &menu_restaurant::receive_message, this, &menu_restaurant::on_back_button_clicked);
-
     connect(this, &menu_restaurant::click_shopping_basket_button, this, &menu_restaurant::send_message);
-
     connect(this, &menu_restaurant::receive_message, this, &menu_restaurant::on_shopping_basket_button_clicked);
-
-    // Connect new food management buttons
     connect(ui->addFoodButton, &QPushButton::clicked, this, &menu_restaurant::on_addFoodButton_clicked);
     connect(ui->editFoodButton, &QPushButton::clicked, this, &menu_restaurant::on_editFoodButton_clicked);
     connect(ui->deleteFoodButton, &QPushButton::clicked, this, &menu_restaurant::on_deleteFoodButton_clicked);
@@ -36,10 +34,24 @@ menu_restaurant::menu_restaurant(QWidget *parent)
     connect(ui->bord_ListWidget, &QListWidget::itemClicked, this, &menu_restaurant::on_menuItem_selected);
 
     socket.connectToHost("127.0.0.1",6006);
-
     if(socket.waitForConnected(1000))
     {
         receive_message();
+    }
+
+    QSqlDatabase db = QSqlDatabase::database();
+    if (!db.isOpen()) {
+        db = QSqlDatabase::addDatabase("QSQLITE");
+        db.setDatabaseName("iut_food.db");
+        db.open();
+    }
+    QSqlQuery query;
+    query.prepare("SELECT restaurant_id FROM users WHERE username = ?");
+    query.addBindValue(currentRestaurantUsername);
+    if (query.exec() && query.next()) {
+        currentRestaurantId = query.value(0).toInt();
+    } else {
+        QMessageBox::critical(this, "Error", "Could not retrieve restaurant ID for user.");
     }
 
     open_menu_from_database();
@@ -55,29 +67,19 @@ int menu_restaurant::index = 0;
 
 void menu_restaurant::open_menu_from_database()
 {
-    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
-    db.setDatabaseName("iut_food.db");
+    if (currentRestaurantId == -1) return;
     
-    if (!db.open()) {
-        QMessageBox::critical(this, "Database Error", "Could not open database: " + db.lastError().text());
+    QSqlDatabase db = QSqlDatabase::database();
+    if (!db.isOpen()) {
+        // Handle error, maybe show message
         return;
     }
-
-    // Create menu table if it doesn't exist
-    QSqlQuery createQuery;
-    createQuery.exec("CREATE TABLE IF NOT EXISTS menu_items ("
-                    "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-                    "restaurant_id INTEGER,"
-                    "food_type TEXT NOT NULL,"
-                    "food_name TEXT NOT NULL,"
-                    "food_details TEXT NOT NULL,"
-                    "price INTEGER NOT NULL,"
-                    "created_at DATETIME DEFAULT CURRENT_TIMESTAMP"
-                    ");");
-
-    // Load menu items from database
+    
+    menu_list.clear();
+    
     QSqlQuery query;
-    query.prepare("SELECT food_type, food_name, food_details, price FROM menu_items ORDER BY food_type, food_name");
+    query.prepare("SELECT food_type, food_name, food_details, price FROM menu_items WHERE restaurant_id = ? ORDER BY food_type, food_name");
+    query.addBindValue(currentRestaurantId);
     
     if (query.exec()) {
         while (query.next()) {
@@ -92,51 +94,50 @@ void menu_restaurant::open_menu_from_database()
     } else {
         QMessageBox::warning(this, "Database Error", "Could not load menu items: " + query.lastError().text());
     }
-    
-    db.close();
 }
 
 void menu_restaurant::save_menu_to_database()
 {
-    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
-    db.setDatabaseName("iut_food.db");
-    
-    if (!db.open()) {
-        QMessageBox::critical(this, "Database Error", "Could not open database: " + db.lastError().text());
+    if (currentRestaurantId == -1) return;
+
+    QSqlDatabase db = QSqlDatabase::database();
+     if (!db.isOpen()) {
+        // Handle error
         return;
     }
 
-    // Clear existing menu items
     QSqlQuery clearQuery;
-    clearQuery.exec("DELETE FROM menu_items");
+    clearQuery.prepare("DELETE FROM menu_items WHERE restaurant_id = ?");
+    clearQuery.addBindValue(currentRestaurantId);
+    if (!clearQuery.exec()) {
+        QMessageBox::warning(this, "Database Error", "Could not clear old menu items: " + clearQuery.lastError().text());
+        return;
+    }
 
-    // Insert all menu items
     QSqlQuery insertQuery;
     insertQuery.prepare("INSERT INTO menu_items (restaurant_id, food_type, food_name, food_details, price) VALUES (?, ?, ?, ?, ?)");
     
-    for(auto restaurantIt = menu_list.begin(); restaurantIt != menu_list.end(); ++restaurantIt)
+    for(auto typeIt = menu_list.constBegin(); typeIt != menu_list.constEnd(); ++typeIt)
     {
-        QString foodType = restaurantIt.key();
-        QMap<QString, QPair<QString, QString>> foods = restaurantIt.value();
+        const QString& foodType = typeIt.key();
+        const QMap<QString, QPair<QString, QString>>& foods = typeIt.value();
         
-        for(auto foodIt = foods.begin(); foodIt != foods.end(); ++foodIt)
+        for(auto foodIt = foods.constBegin(); foodIt != foods.constEnd(); ++foodIt)
         {
-            QString foodName = foodIt.key();
-            QPair<QString, QString> food = foodIt.value();
+            const QString& foodName = foodIt.key();
+            const QPair<QString, QString>& food = foodIt.value();
             
-            insertQuery.addBindValue(1); // Default restaurant ID
-            insertQuery.addBindValue(foodType);
-            insertQuery.addBindValue(foodName);
-            insertQuery.addBindValue(food.first);  // details
-            insertQuery.addBindValue(food.second.toInt()); // price
+            insertQuery.bindValue(0, currentRestaurantId);
+            insertQuery.bindValue(1, foodType);
+            insertQuery.bindValue(2, foodName);
+            insertQuery.bindValue(3, food.first);
+            insertQuery.bindValue(4, food.second.toInt());
             
             if (!insertQuery.exec()) {
-                QMessageBox::warning(this, "Database Error", "Could not save menu item: " + insertQuery.lastError().text());
+                QMessageBox::warning(this, "Database Error", "Could not save menu item '" + foodName + "': " + insertQuery.lastError().text());
             }
         }
     }
-    
-    db.close();
 }
 
 void menu_restaurant::refresh_menu_display()
@@ -336,9 +337,9 @@ void menu_restaurant::click_back_button()
 
 void menu_restaurant::on_back_button_clicked()
 {
-    customer *c = new customer();
-    c->setAttribute(Qt::WA_DeleteOnClose);
-    c->show();
+    restaurant_auth *ra = new restaurant_auth(currentRestaurantUsername);
+    ra->setAttribute(Qt::WA_DeleteOnClose);
+    ra->showMaximized();
     this->close();
 }
 
@@ -350,43 +351,9 @@ void menu_restaurant::click_shopping_basket_button()
 
 void menu_restaurant::on_shopping_basket_button_clicked()
 {
-    int j = 0;
-    QString food_type;
-    QString food_name;
-    QString price;
-
-    for(auto i = menu_list.begin(); i != menu_list.end(); ++i)
-    {
-        QListWidgetItem *item = ui->bord_ListWidget->item(j);
-
-        if(j%2 == 0)
-        {
-            food_type = i.key();
-            QMap<QString,QPair<QString,QString>> map = i.value();
-            food_name = map.firstKey();
-            QPair<QString,QString> food = map[food_name];
-            price = food.second;
-            shopping_basket::shop_basket[food_type][food_name] = food;
-            ++j;
-        }
-
-        if(j%2 != 0)
-        {
-            QListWidgetItem *item = ui->bord_ListWidget->item(j);
-            QWidget *widget = ui->bord_ListWidget->itemWidget(item);
-            QSpinBox *spin = qobject_cast<QSpinBox*>(widget);
-            if(spin)
-            {
-                shopping_basket::sum += (spin->value() * price.toInt());
-            }
-        }
-
-        ++j;
-    }
-
-    shopping_basket *sb = new shopping_basket();
+    shopping_basket *sb = new shopping_basket(currentRestaurantUsername);
     sb->setAttribute(Qt::WA_DeleteOnClose);
-    sb->show();
+    sb->showMaximized();
     this->close();
 }
 

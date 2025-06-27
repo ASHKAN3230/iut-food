@@ -17,7 +17,8 @@ class menu_restaurant : public QWidget
     Q_OBJECT
 
 public:
-    explicit menu_restaurant(QWidget *parent = nullptr);
+    explicit menu_restaurant(const QString &username, QWidget *parent = nullptr);
+    ~menu_restaurant();
 
     void click_back_button();
 
@@ -40,8 +41,6 @@ public:
     QTcpSocket socket;
 
     QMap<QString,QMap<QString,QPair<QString,QString>>> menu_list;
-
-    ~menu_restaurant();
 
 signals:
 
@@ -73,6 +72,8 @@ private:
     QString selectedFoodType;
     QString selectedFoodName;
     int selectedItemIndex;
+    QString currentRestaurantUsername;
+    int currentRestaurantId;
 };
 
 #endif // MENU_RESTAURANT_H

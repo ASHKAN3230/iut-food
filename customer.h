@@ -19,7 +19,7 @@ class customer : public QWidget
     Q_OBJECT
 
 public:
-    explicit customer(QWidget *parent = nullptr);
+    explicit customer(const QString &username, QWidget *parent = nullptr);
 
     void click_search_button();
 
@@ -57,7 +57,7 @@ public slots:
 
 private:
     Ui::customer *ui;
-
+    QString currentUsername;
 };
 
 #endif // CUSTOMER_H

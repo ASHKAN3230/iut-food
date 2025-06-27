@@ -4,12 +4,16 @@
 #include "rate.h"//پیش فرض
 #include<QMessageBox>
 #include<QLabel>
+#include<QFile>
+#include<QTextStream>
 
-order::order(QWidget *parent)
+order::order(const QString &username, QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::order)
 {
     ui->setupUi(this);
+    currentUsername = username;
+    set_labels();
 
     connect(this, &order::click_back_button, this, &order::send_message);
 
@@ -107,15 +111,10 @@ void order::click_order_tracking()
 
 void order::on_back_button_clicked()
 {
-
-    shopping_basket *sb = new shopping_basket();
-
+    shopping_basket *sb = new shopping_basket(currentUsername);
     sb->setAttribute(Qt::WA_DeleteOnClose);
-
-    sb->show();
-
+    sb->showMaximized();
     this->close();
-
 }
 
 void order::receive_message()
@@ -180,14 +179,22 @@ void order::send_message()
 
 void order::on_order_tracking_button_clicked()
 {
-    //پیش فرض
-    rate *r = new rate();
-
+    rate *r = new rate(currentUsername);
     r->setAttribute(Qt::WA_DeleteOnClose);
-
     r->show();
-
     this->close();
+}
 
+void order::on_rate_button_clicked()
+{
+    rate *Rate = new rate(currentUsername);
+    Rate->setAttribute(Qt::WA_DeleteOnClose);
+    Rate->show();
+    this->close();
+}
+
+void order::set_labels()
+{
+    // TODO: Implement label setup logic if needed
 }
 

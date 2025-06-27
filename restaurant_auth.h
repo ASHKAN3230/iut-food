@@ -17,7 +17,7 @@ class restaurant_auth : public QWidget
     Q_OBJECT
 
 public:
-    explicit restaurant_auth(QWidget *parent = nullptr);
+    explicit restaurant_auth(const QString &username, QWidget *parent = nullptr);
     ~restaurant_auth();
 
     void check_restaurant_menu_status();

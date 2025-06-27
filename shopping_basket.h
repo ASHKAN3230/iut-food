@@ -15,7 +15,7 @@ class shopping_basket : public QWidget
     Q_OBJECT
 
 public:
-    explicit shopping_basket(QWidget *parent = nullptr);
+    explicit shopping_basket(const QString &username, QWidget *parent = nullptr);
 
     void click_back_button();
 
@@ -35,6 +35,10 @@ public:
 
     ~shopping_basket();
 
+    void set_lables();
+
+    void set_items();
+
 signals:
 
     void click_back();
@@ -50,8 +54,11 @@ public slots:
 
     void on_save_order_button_clicked();
 
+    void on_order_button_clicked();
+
 private:
     Ui::shopping_basket *ui;
+    QString currentRestaurantUsername;
 };
 
 #endif // SHOPPING_BASKET_H

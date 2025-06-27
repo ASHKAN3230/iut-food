@@ -17,7 +17,7 @@ class rate : public QWidget
     Q_OBJECT
 
 public:
-    explicit rate(QWidget *parent = nullptr);
+    explicit rate(const QString &username, QWidget *parent = nullptr);
 
     void click_back_button();
 
@@ -26,6 +26,8 @@ public:
     void receive_message();
 
     void show_rates();
+
+    void set_items_for_rate();
 
     QMap<int,QPair<QString,QPair<QString,QString>>> rate_information;
 
@@ -56,6 +58,7 @@ public slots:
 
 private:
     Ui::rate *ui;
+    QString currentUsername;
 };
 
 #endif // RATE_H

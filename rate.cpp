@@ -8,12 +8,16 @@
 #include<QlineEdit>
 #include<QSpinBox>
 #include<QRadioButton>
+#include<QTextStream>
 
-rate::rate(QWidget *parent)
+rate::rate(const QString &username, QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::rate)
 {
     ui->setupUi(this);
+    currentUsername = username;
+
+    set_items_for_rate();
 
     connect(this, &rate::click_back_button, this, &rate::send_message);
 
@@ -235,8 +239,8 @@ void rate::on_save_button_clicked()
 
 void rate::on_back_button_clicked()
 {
-    //پیش فرض
-    order *Order = new order();
+
+    order *Order = new order(currentUsername);
 
     Order->setAttribute(Qt::WA_DeleteOnClose);
 
@@ -304,4 +308,9 @@ void rate::receive_message()
 
     }
 
+}
+
+void rate::set_items_for_rate()
+{
+    // TODO: Implement this function
 }

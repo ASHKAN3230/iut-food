@@ -128,26 +128,56 @@ void MainWindow::on_login_button_clicked()
         QString userType = query.value(0).toString();
         state = true;
         if (userType == "customer") {
-            customer *person = new customer();
+            customer *person = new customer(username_line);
             person->setAttribute(Qt::WA_DeleteOnClose);
             person->showMaximized();
             this->close();
             return;
         } else if (userType == "manager") {
-            menu_restaurant *mr = new menu_restaurant();
+            menu_restaurant *mr = new menu_restaurant(username_line);
             mr->setAttribute(Qt::WA_DeleteOnClose);
             mr->showMaximized();
             this->close();
             return;
         } else if (userType == "restaurant") {
-            // Redirect restaurant users to authentication page
-            restaurant_auth *ra = new restaurant_auth();
-            ra->setAttribute(Qt::WA_DeleteOnClose);
-            ra->showMaximized();
-            this->close();
-            return;
+            bool setupComplete = false;
+            
+            QSqlQuery setupQuery;
+            setupQuery.prepare(
+                "SELECT u.restaurant_id, COUNT(m.id) "
+                "FROM users u "
+                "LEFT JOIN menu_items m ON u.restaurant_id = m.restaurant_id "
+                "WHERE u.username = ? "
+                "GROUP BY u.restaurant_id"
+            );
+            setupQuery.addBindValue(username_line);
+            
+            if (setupQuery.exec() && setupQuery.next()) {
+                bool restaurantIdExists = !setupQuery.value(0).isNull();
+                int menuItemCount = setupQuery.value(1).toInt();
+                if (restaurantIdExists && menuItemCount > 0) {
+                    setupComplete = true;
+                }
+            }
+            
+            db.close();
+            
+            if (setupComplete) {
+                menu_restaurant *mr = new menu_restaurant(username_line);
+                mr->setAttribute(Qt::WA_DeleteOnClose);
+                mr->showMaximized();
+                this->close();
+                return;
+            } else {
+                restaurant_auth *ra = new restaurant_auth(username_line);
+                ra->setAttribute(Qt::WA_DeleteOnClose);
+                ra->showMaximized();
+                this->close();
+                return;
+            }
         }
     }
+
     if (!state) {
         QMessageBox::warning(this, "fail", "username or password is not correct");
     }
