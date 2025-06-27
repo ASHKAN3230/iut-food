@@ -166,59 +166,61 @@
             </property>
            </widget>
           </item>
-         </layout>
-         <layout class="QHBoxLayout" name="foodButtonLayout">
-          <item>
-           <widget class="QPushButton" name="addFoodButton">
-            <property name="text">
-             <string>➕ Add Food</string>
-            </property>
-            <property name="toolTip">
-             <string>Add a new food item</string>
-            </property>
-            <property name="styleSheet">
-             <string notr="true">color: #fff; font: 700 11pt 'Segoe UI'; background: #28a745; border-radius: 5px; padding: 6px 18px;</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="editFoodButton">
-            <property name="text">
-             <string>✏️ Edit Food</string>
-            </property>
-            <property name="toolTip">
-             <string>Edit selected food item</string>
-            </property>
-            <property name="styleSheet">
-             <string notr="true">color: #fff; font: 700 11pt 'Segoe UI'; background: #ffa500; border-radius: 5px; padding: 6px 18px;</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="deleteFoodButton">
-            <property name="text">
-             <string>🗑️ Delete Food</string>
-            </property>
-            <property name="toolTip">
-             <string>Delete selected food item</string>
-            </property>
-            <property name="styleSheet">
-             <string notr="true">color: #fff; font: 700 11pt 'Segoe UI'; background: #dc3545; border-radius: 5px; padding: 6px 18px;</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="clearFormButton">
-            <property name="text">
-             <string>🧹 Clear Form</string>
-            </property>
-            <property name="toolTip">
-             <string>Clear all input fields</string>
-            </property>
-            <property name="styleSheet">
-             <string notr="true">color: #fff; font: 700 11pt 'Segoe UI'; background: #6c757d; border-radius: 5px; padding: 6px 18px;</string>
-            </property>
-           </widget>
+          <item row="4" column="0" colspan="2">
+           <layout class="QHBoxLayout" name="foodButtonLayout">
+            <item>
+             <widget class="QPushButton" name="addFoodButton">
+              <property name="text">
+               <string>➕ Add Food</string>
+              </property>
+              <property name="toolTip">
+               <string>Add a new food item</string>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">color: #fff; font: 700 11pt 'Segoe UI'; background: #28a745; border-radius: 5px; padding: 6px 18px;</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="editFoodButton">
+              <property name="text">
+               <string>✏️ Edit Food</string>
+              </property>
+              <property name="toolTip">
+               <string>Edit selected food item</string>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">color: #fff; font: 700 11pt 'Segoe UI'; background: #ffa500; border-radius: 5px; padding: 6px 18px;</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="deleteFoodButton">
+              <property name="text">
+               <string>🗑️ Delete Food</string>
+              </property>
+              <property name="toolTip">
+               <string>Delete selected food item</string>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">color: #fff; font: 700 11pt 'Segoe UI'; background: #dc3545; border-radius: 5px; padding: 6px 18px;</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="clearFormButton">
+              <property name="text">
+               <string>🧹 Clear Form</string>
+              </property>
+              <property name="toolTip">
+               <string>Clear all input fields</string>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">color: #fff; font: 700 11pt 'Segoe UI'; background: #6c757d; border-radius: 5px; padding: 6px 18px;</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
           </item>
          </layout>
         </widget>
