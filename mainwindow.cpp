@@ -4,6 +4,7 @@
 #include "forgot_password.h"
 #include "customer.h"
 #include "menu_restaurant.h"
+#include "restaurant_auth.h"
 #include<QString>
 #include<QFile>
 #include<QTextStream>
@@ -132,10 +133,17 @@ void MainWindow::on_login_button_clicked()
             person->showMaximized();
             this->close();
             return;
-        } else if (userType == "manager" || userType == "restaurant") {
+        } else if (userType == "manager") {
             menu_restaurant *mr = new menu_restaurant();
             mr->setAttribute(Qt::WA_DeleteOnClose);
             mr->showMaximized();
+            this->close();
+            return;
+        } else if (userType == "restaurant") {
+            // Redirect restaurant users to authentication page
+            restaurant_auth *ra = new restaurant_auth();
+            ra->setAttribute(Qt::WA_DeleteOnClose);
+            ra->showMaximized();
             this->close();
             return;
         }

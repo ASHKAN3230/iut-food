@@ -9,6 +9,9 @@
 #include<QSpinBox>
 #include<QMessageBox>
 #include<QInputDialog>
+#include<QSqlDatabase>
+#include<QSqlQuery>
+#include<QSqlError>
 
 menu_restaurant::menu_restaurant(QWidget *parent)
     : QWidget(parent)
@@ -39,7 +42,7 @@ menu_restaurant::menu_restaurant(QWidget *parent)
         receive_message();
     }
 
-    open_menu_file();
+    open_menu_from_database();
     refresh_menu_display();
 }
 
@@ -50,90 +53,90 @@ menu_restaurant::~menu_restaurant()
 
 int menu_restaurant::index = 0;
 
-void menu_restaurant::open_menu_file()
+void menu_restaurant::open_menu_from_database()
 {
-    QFile file_9("files/menu_list.txt");
-
-    if(file_9.open(QIODevice::ReadOnly | QIODevice::Text))
-    {
-        QTextStream in(&file_9);
-
-        QString str;
-        QString line;
-        QString food_type;
-        QString food_name;
-        QString food_details;
-        QString price;
-
-        int counter = 0;
-
-        while(!in.atEnd())
-        {
-            if(index == (counter/4))
-            {
-                line = in.readLine().trimmed();
-                str = line + " | ";
-                food_type = line;
-                counter++;
-
-                line = in.readLine().trimmed();
-                str = str + line + " | ";
-                food_name = line;
-                counter++;
-
-                line = in.readLine().trimmed();
-                str = str + line + " | ";
-                food_details = line;
-                counter++;
-
-                line = in.readLine().trimmed();
-                str = str + line;
-                price = line;
-                counter++;
-
-                QPair<QString,QString> food(food_details,price);
-                menu_list[food_type][food_name] = food;
-            }
-            else
-            {
-                // Skip lines for other restaurants
-                for(int i = 0; i < 4 && !in.atEnd(); i++)
-                {
-                    in.readLine();
-                    counter++;
-                }
-            }
-        }
-        file_9.close();
+    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
+    db.setDatabaseName("iut_food.db");
+    
+    if (!db.open()) {
+        QMessageBox::critical(this, "Database Error", "Could not open database: " + db.lastError().text());
+        return;
     }
+
+    // Create menu table if it doesn't exist
+    QSqlQuery createQuery;
+    createQuery.exec("CREATE TABLE IF NOT EXISTS menu_items ("
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                    "restaurant_id INTEGER,"
+                    "food_type TEXT NOT NULL,"
+                    "food_name TEXT NOT NULL,"
+                    "food_details TEXT NOT NULL,"
+                    "price INTEGER NOT NULL,"
+                    "created_at DATETIME DEFAULT CURRENT_TIMESTAMP"
+                    ");");
+
+    // Load menu items from database
+    QSqlQuery query;
+    query.prepare("SELECT food_type, food_name, food_details, price FROM menu_items ORDER BY food_type, food_name");
+    
+    if (query.exec()) {
+        while (query.next()) {
+            QString foodType = query.value(0).toString();
+            QString foodName = query.value(1).toString();
+            QString foodDetails = query.value(2).toString();
+            QString price = query.value(3).toString();
+            
+            QPair<QString, QString> food(foodDetails, price);
+            menu_list[foodType][foodName] = food;
+        }
+    } else {
+        QMessageBox::warning(this, "Database Error", "Could not load menu items: " + query.lastError().text());
+    }
+    
+    db.close();
 }
 
-void menu_restaurant::save_menu_to_file()
+void menu_restaurant::save_menu_to_database()
 {
-    QFile file("files/menu_list.txt");
-    if(file.open(QIODevice::WriteOnly | QIODevice::Text))
+    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
+    db.setDatabaseName("iut_food.db");
+    
+    if (!db.open()) {
+        QMessageBox::critical(this, "Database Error", "Could not open database: " + db.lastError().text());
+        return;
+    }
+
+    // Clear existing menu items
+    QSqlQuery clearQuery;
+    clearQuery.exec("DELETE FROM menu_items");
+
+    // Insert all menu items
+    QSqlQuery insertQuery;
+    insertQuery.prepare("INSERT INTO menu_items (restaurant_id, food_type, food_name, food_details, price) VALUES (?, ?, ?, ?, ?)");
+    
+    for(auto restaurantIt = menu_list.begin(); restaurantIt != menu_list.end(); ++restaurantIt)
     {
-        QTextStream out(&file);
+        QString foodType = restaurantIt.key();
+        QMap<QString, QPair<QString, QString>> foods = restaurantIt.value();
         
-        // Write all restaurants' menus
-        for(auto restaurantIt = menu_list.begin(); restaurantIt != menu_list.end(); ++restaurantIt)
+        for(auto foodIt = foods.begin(); foodIt != foods.end(); ++foodIt)
         {
-            QString foodType = restaurantIt.key();
-            QMap<QString, QPair<QString, QString>> foods = restaurantIt.value();
+            QString foodName = foodIt.key();
+            QPair<QString, QString> food = foodIt.value();
             
-            for(auto foodIt = foods.begin(); foodIt != foods.end(); ++foodIt)
-            {
-                QString foodName = foodIt.key();
-                QPair<QString, QString> food = foodIt.value();
-                
-                out << foodType << "\n";
-                out << foodName << "\n";
-                out << food.first << "\n";  // details
-                out << food.second << "\n"; // price
+            insertQuery.addBindValue(1); // Default restaurant ID
+            insertQuery.addBindValue(foodType);
+            insertQuery.addBindValue(foodName);
+            insertQuery.addBindValue(food.first);  // details
+            insertQuery.addBindValue(food.second.toInt()); // price
+            
+            if (!insertQuery.exec()) {
+                QMessageBox::warning(this, "Database Error", "Could not save menu item: " + insertQuery.lastError().text());
             }
         }
-        file.close();
     }
+    
+    db.close();
 }
 
 void menu_restaurant::refresh_menu_display()
@@ -205,7 +208,7 @@ void menu_restaurant::on_addFoodButton_clicked()
     QPair<QString, QString> food(foodDetails, price);
     menu_list[foodType][foodName] = food;
     
-    save_menu_to_file();
+    save_menu_to_database();
     refresh_menu_display();
     clear_form();
     
@@ -247,7 +250,7 @@ void menu_restaurant::on_editFoodButton_clicked()
     QPair<QString, QString> food(newFoodDetails, newPrice);
     menu_list[newFoodType][newFoodName] = food;
     
-    save_menu_to_file();
+    save_menu_to_database();
     refresh_menu_display();
     clear_form();
     
@@ -279,7 +282,7 @@ void menu_restaurant::on_deleteFoodButton_clicked()
             }
         }
         
-        save_menu_to_file();
+        save_menu_to_database();
         refresh_menu_display();
         clear_form();
         

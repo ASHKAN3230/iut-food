@@ -15,12 +15,14 @@ DEFINES += SRC_PATH=\\\"$$PWD/\\\"
 SOURCES += \
     clicklabel.cpp \
     customer.cpp \
+    database_manager.cpp \
     forgot_password.cpp \
     main.cpp \
     mainwindow.cpp \
     menu_restaurant.cpp \
     order.cpp \
     rate.cpp \
+    restaurant_auth.cpp \
     server.cpp \
     shopping_basket.cpp \
     sign_in.cpp
@@ -28,11 +30,13 @@ SOURCES += \
 HEADERS += \
     clicklabel.h \
     customer.h \
+    database_manager.h \
     forgot_password.h \
     mainwindow.h \
     menu_restaurant.h \
     order.h \
     rate.h \
+    restaurant_auth.h \
     server.h \
     shopping_basket.h \
     sign_in.h
@@ -44,6 +48,7 @@ FORMS += \
     menu_restaurant.ui \
     order.ui \
     rate.ui \
+    restaurant_auth.ui \
     shopping_basket.ui \
     sign_in.ui
 

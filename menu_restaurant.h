@@ -23,11 +23,11 @@ public:
 
     void click_shopping_basket_button();
 
-    void open_menu_file();
+    void open_menu_from_database();
 
     void receive_message();
 
-    void save_menu_to_file();
+    void save_menu_to_database();
 
     void refresh_menu_display();
 
