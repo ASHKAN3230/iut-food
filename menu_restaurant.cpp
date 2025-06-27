@@ -14,6 +14,9 @@
 #include<QSqlDatabase>
 #include<QSqlQuery>
 #include<QSqlError>
+#include<QTableWidgetItem>
+#include<QHeaderView>
+#include <QDateTime>
 
 menu_restaurant::menu_restaurant(const QString &username, QWidget *parent)
     : QWidget(parent)
@@ -26,13 +29,23 @@ menu_restaurant::menu_restaurant(const QString &username, QWidget *parent)
 
     connect(this, &menu_restaurant::click_shopping_basket_button, this, &menu_restaurant::send_message);
     connect(this, &menu_restaurant::receive_message, this, &menu_restaurant::on_shopping_basket_button_clicked);
-    connect(ui->addFoodButton, &QPushButton::clicked, this, &menu_restaurant::on_addFoodButton_clicked);
-    connect(ui->editFoodButton, &QPushButton::clicked, this, &menu_restaurant::on_editFoodButton_clicked);
-    connect(ui->deleteFoodButton, &QPushButton::clicked, this, &menu_restaurant::on_deleteFoodButton_clicked);
-    connect(ui->clearFormButton, &QPushButton::clicked, this, &menu_restaurant::on_clearFormButton_clicked);
-    connect(ui->bord_ListWidget, &QListWidget::itemClicked, this, &menu_restaurant::on_menuItem_selected);
+    QPushButton *addFoodButton = ui->foodManagementGroup->findChild<QPushButton*>("addFoodButton");
+    QPushButton *editFoodButton = ui->foodManagementGroup->findChild<QPushButton*>("editFoodButton");
+    QPushButton *deleteFoodButton = ui->foodManagementGroup->findChild<QPushButton*>("deleteFoodButton");
+    QPushButton *clearFormButton = ui->foodManagementGroup->findChild<QPushButton*>("clearFormButton");
+    QTableWidget *menuTableWidget = ui->menuDisplayGroup->findChild<QTableWidget*>("menuTableWidget");
+
+    connect(addFoodButton, &QPushButton::clicked, this, &menu_restaurant::on_addFoodButton_clicked);
+    connect(editFoodButton, &QPushButton::clicked, this, &menu_restaurant::on_editFoodButton_clicked);
+    connect(deleteFoodButton, &QPushButton::clicked, this, &menu_restaurant::on_deleteFoodButton_clicked);
+    connect(clearFormButton, &QPushButton::clicked, this, &menu_restaurant::on_clearFormButton_clicked);
+    connect(menuTableWidget, &QTableWidget::itemClicked, this, &menu_restaurant::on_menuItem_selected);
     connect(ui->profile_button, &QPushButton::clicked, this, &menu_restaurant::on_profile_button_clicked);
     connect(ui->logout_button, &QPushButton::clicked, this, &menu_restaurant::on_logout_button_clicked);
+    QPushButton *refreshOrdersButton = ui->orderManagementGroup->findChild<QPushButton*>("refreshOrdersButton");
+    QPushButton *updateStatusButton = ui->orderManagementGroup->findChild<QPushButton*>("updateStatusButton");
+    connect(refreshOrdersButton, &QPushButton::clicked, this, &menu_restaurant::on_refreshOrdersButton_clicked);
+    connect(updateStatusButton, &QPushButton::clicked, this, &menu_restaurant::on_updateStatusButton_clicked);
 
     socket.connectToHost("127.0.0.1",6006);
     if(socket.waitForConnected(1000))
@@ -57,6 +70,7 @@ menu_restaurant::menu_restaurant(const QString &username, QWidget *parent)
 
     open_menu_from_database();
     refresh_menu_display();
+    load_orders();
 }
 
 menu_restaurant::~menu_restaurant()
@@ -143,45 +157,44 @@ void menu_restaurant::save_menu_to_database()
 
 void menu_restaurant::refresh_menu_display()
 {
-    ui->bord_ListWidget->clear();
-    
-    int itemIndex = 0;
+    QTableWidget *menuTableWidget = ui->menuDisplayGroup->findChild<QTableWidget*>("menuTableWidget");
+    menuTableWidget->clear();
+    menuTableWidget->setRowCount(0);
+    menuTableWidget->setColumnCount(4);
+    menuTableWidget->setHorizontalHeaderLabels({"Food Type", "Food Name", "Details", "Price"});
+    menuTableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+
     for(auto restaurantIt = menu_list.begin(); restaurantIt != menu_list.end(); ++restaurantIt)
     {
         QString foodType = restaurantIt.key();
         QMap<QString, QPair<QString, QString>> foods = restaurantIt.value();
-        
         for(auto foodIt = foods.begin(); foodIt != foods.end(); ++foodIt)
         {
             QString foodName = foodIt.key();
             QPair<QString, QString> food = foodIt.value();
-            
-            QString displayText = foodType + " | " + foodName + " | " + food.first + " | " + food.second;
-            
-            QLabel *label = new QLabel(displayText);
-            QSpinBox *spinbox = new QSpinBox();
-            spinbox->setMinimum(0);
-            spinbox->setMaximum(99);
-            
-            QListWidgetItem *li_1 = new QListWidgetItem(ui->bord_ListWidget);
-            ui->bord_ListWidget->addItem(li_1);
-            ui->bord_ListWidget->setItemWidget(li_1, label);
-            
-            QListWidgetItem *li_2 = new QListWidgetItem(ui->bord_ListWidget);
-            ui->bord_ListWidget->addItem(li_2);
-            ui->bord_ListWidget->setItemWidget(li_2, spinbox);
-            
-            itemIndex += 2;
+            QString foodDetails = food.first;
+            QString price = food.second;
+
+            int row = menuTableWidget->rowCount();
+            menuTableWidget->insertRow(row);
+            menuTableWidget->setItem(row, 0, new QTableWidgetItem(foodType));
+            menuTableWidget->setItem(row, 1, new QTableWidgetItem(foodName));
+            menuTableWidget->setItem(row, 2, new QTableWidgetItem(foodDetails));
+            menuTableWidget->setItem(row, 3, new QTableWidgetItem(price));
         }
     }
 }
 
 void menu_restaurant::clear_form()
 {
-    ui->foodTypeEdit->clear();
-    ui->foodNameEdit->clear();
-    ui->foodDetailsEdit->clear();
-    ui->priceSpinBox->setValue(0);
+    QLineEdit *foodTypeEdit = ui->foodManagementGroup->findChild<QLineEdit*>("foodTypeEdit");
+    QLineEdit *foodNameEdit = ui->foodManagementGroup->findChild<QLineEdit*>("foodNameEdit");
+    QLineEdit *foodDetailsEdit = ui->foodManagementGroup->findChild<QLineEdit*>("foodDetailsEdit");
+    QSpinBox *priceSpinBox = ui->foodManagementGroup->findChild<QSpinBox*>("priceSpinBox");
+    if (foodTypeEdit) foodTypeEdit->clear();
+    if (foodNameEdit) foodNameEdit->clear();
+    if (foodDetailsEdit) foodDetailsEdit->clear();
+    if (priceSpinBox) priceSpinBox->setValue(0);
     selectedItemIndex = -1;
     selectedFoodType.clear();
     selectedFoodName.clear();
@@ -189,11 +202,16 @@ void menu_restaurant::clear_form()
 
 void menu_restaurant::on_addFoodButton_clicked()
 {
-    QString foodType = ui->foodTypeEdit->text().trimmed();
-    QString foodName = ui->foodNameEdit->text().trimmed();
-    QString foodDetails = ui->foodDetailsEdit->text().trimmed();
-    QString price = QString::number(ui->priceSpinBox->value());
-    
+    QLineEdit *foodTypeEdit = ui->foodManagementGroup->findChild<QLineEdit*>("foodTypeEdit");
+    QLineEdit *foodNameEdit = ui->foodManagementGroup->findChild<QLineEdit*>("foodNameEdit");
+    QLineEdit *foodDetailsEdit = ui->foodManagementGroup->findChild<QLineEdit*>("foodDetailsEdit");
+    QSpinBox *priceSpinBox = ui->foodManagementGroup->findChild<QSpinBox*>("priceSpinBox");
+
+    QString foodType = foodTypeEdit ? foodTypeEdit->text().trimmed() : "";
+    QString foodName = foodNameEdit ? foodNameEdit->text().trimmed() : "";
+    QString foodDetails = foodDetailsEdit ? foodDetailsEdit->text().trimmed() : "";
+    QString price = priceSpinBox ? QString::number(priceSpinBox->value()) : "0";
+
     if(foodType.isEmpty() || foodName.isEmpty() || foodDetails.isEmpty() || price == "0")
     {
         QMessageBox::warning(this, "Input Error", "Please fill all fields with valid values!");
@@ -219,17 +237,16 @@ void menu_restaurant::on_addFoodButton_clicked()
 
 void menu_restaurant::on_editFoodButton_clicked()
 {
-    if(selectedItemIndex == -1)
-    {
-        QMessageBox::warning(this, "Selection Error", "Please select a food item to edit!");
-        return;
-    }
-    
-    QString newFoodType = ui->foodTypeEdit->text().trimmed();
-    QString newFoodName = ui->foodNameEdit->text().trimmed();
-    QString newFoodDetails = ui->foodDetailsEdit->text().trimmed();
-    QString newPrice = QString::number(ui->priceSpinBox->value());
-    
+    QLineEdit *foodTypeEdit = ui->foodManagementGroup->findChild<QLineEdit*>("foodTypeEdit");
+    QLineEdit *foodNameEdit = ui->foodManagementGroup->findChild<QLineEdit*>("foodNameEdit");
+    QLineEdit *foodDetailsEdit = ui->foodManagementGroup->findChild<QLineEdit*>("foodDetailsEdit");
+    QSpinBox *priceSpinBox = ui->foodManagementGroup->findChild<QSpinBox*>("priceSpinBox");
+
+    QString newFoodType = foodTypeEdit ? foodTypeEdit->text().trimmed() : "";
+    QString newFoodName = foodNameEdit ? foodNameEdit->text().trimmed() : "";
+    QString newFoodDetails = foodDetailsEdit ? foodDetailsEdit->text().trimmed() : "";
+    QString newPrice = priceSpinBox ? QString::number(priceSpinBox->value()) : "0";
+
     if(newFoodType.isEmpty() || newFoodName.isEmpty() || newFoodDetails.isEmpty() || newPrice == "0")
     {
         QMessageBox::warning(this, "Input Error", "Please fill all fields with valid values!");
@@ -299,35 +316,22 @@ void menu_restaurant::on_clearFormButton_clicked()
 
 void menu_restaurant::on_menuItem_selected()
 {
-    QListWidgetItem *item = ui->bord_ListWidget->currentItem();
-    if(!item) return;
-    
-    int row = ui->bord_ListWidget->row(item);
-    if(row % 2 == 0) // Only handle label items (even rows)
-    {
-        QWidget *widget = ui->bord_ListWidget->itemWidget(item);
-        QLabel *label = qobject_cast<QLabel*>(widget);
-        if(label)
-        {
-            QString text = label->text();
-            QStringList parts = text.split(" | ");
-            
-            if(parts.size() >= 4)
-            {
-                selectedFoodType = parts[0];
-                selectedFoodName = parts[1];
-                QString foodDetails = parts[2];
-                QString price = parts[3];
-                
-                ui->foodTypeEdit->setText(selectedFoodType);
-                ui->foodNameEdit->setText(selectedFoodName);
-                ui->foodDetailsEdit->setText(foodDetails);
-                ui->priceSpinBox->setValue(price.toInt());
-                
-                selectedItemIndex = row;
-            }
-        }
-    }
+    QTableWidget *menuTableWidget = ui->menuDisplayGroup->findChild<QTableWidget*>("menuTableWidget");
+    QLineEdit *foodTypeEdit = ui->foodManagementGroup->findChild<QLineEdit*>("foodTypeEdit");
+    QLineEdit *foodNameEdit = ui->foodManagementGroup->findChild<QLineEdit*>("foodNameEdit");
+    QLineEdit *foodDetailsEdit = ui->foodManagementGroup->findChild<QLineEdit*>("foodDetailsEdit");
+    QSpinBox *priceSpinBox = ui->foodManagementGroup->findChild<QSpinBox*>("priceSpinBox");
+
+    QList<QTableWidgetItem*> selectedItems = menuTableWidget->selectedItems();
+    if(selectedItems.isEmpty()) return;
+    int row = selectedItems.first()->row();
+    if(foodTypeEdit) foodTypeEdit->setText(menuTableWidget->item(row, 0)->text());
+    if(foodNameEdit) foodNameEdit->setText(menuTableWidget->item(row, 1)->text());
+    if(foodDetailsEdit) foodDetailsEdit->setText(menuTableWidget->item(row, 2)->text());
+    if(priceSpinBox) priceSpinBox->setValue(menuTableWidget->item(row, 3)->text().toInt());
+    selectedItemIndex = row;
+    selectedFoodType = menuTableWidget->item(row, 0)->text();
+    selectedFoodName = menuTableWidget->item(row, 1)->text();
 }
 
 void menu_restaurant::click_shopping_basket_button()
@@ -392,6 +396,99 @@ void menu_restaurant::receive_message()
                 message = "";
                 emit click_shop();
             }
+        }
+    }
+}
+
+void menu_restaurant::load_orders()
+{
+    if (currentRestaurantId == -1) return;
+
+    populate_orders_table();
+    ui->ordersTableWidget->setRowCount(0);
+
+    QSqlDatabase db = QSqlDatabase::database();
+    if (!db.isOpen()) return;
+
+    QSqlQuery query(db);
+    query.prepare(
+        "SELECT o.id, u.username, o.total_amount, o.order_status, o.created_at "
+        "FROM orders o "
+        "JOIN users u ON o.customer_id = u.id "
+        "WHERE o.restaurant_id = ? "
+        "ORDER BY o.created_at DESC"
+    );
+    query.addBindValue(currentRestaurantId);
+
+    if (query.exec()) {
+        int row = 0;
+        while (query.next()) {
+            ui->ordersTableWidget->insertRow(row);
+            // Order ID (Column 0) - Store it as user data
+            QTableWidgetItem *idItem = new QTableWidgetItem();
+            idItem->setData(Qt::UserRole, query.value(0));
+            ui->ordersTableWidget->setItem(row, 0, idItem);
+
+            // Customer (Column 1)
+            ui->ordersTableWidget->setItem(row, 1, new QTableWidgetItem(query.value(1).toString()));
+            // Total (Column 2)
+            ui->ordersTableWidget->setItem(row, 2, new QTableWidgetItem(query.value(2).toString()));
+            // Status (Column 3)
+            ui->ordersTableWidget->setItem(row, 3, new QTableWidgetItem(query.value(3).toString()));
+            // Date (Column 4)
+            ui->ordersTableWidget->setItem(row, 4, new QTableWidgetItem(query.value(4).toDateTime().toString()));
+            row++;
+        }
+    } else {
+        QMessageBox::critical(this, "Database Error", "Failed to load orders: " + query.lastError().text());
+    }
+}
+
+void menu_restaurant::populate_orders_table()
+{
+    ui->ordersTableWidget->setColumnCount(5);
+    ui->ordersTableWidget->setHorizontalHeaderLabels({"ID", "Customer", "Total Price", "Status", "Date"});
+    ui->ordersTableWidget->setColumnHidden(0, true); // Hide the ID column
+    ui->ordersTableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    ui->ordersTableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
+    ui->ordersTableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
+}
+
+void menu_restaurant::on_refreshOrdersButton_clicked()
+{
+    load_orders();
+}
+
+void menu_restaurant::on_updateStatusButton_clicked()
+{
+    QList<QTableWidgetItem*> selectedItems = ui->ordersTableWidget->selectedItems();
+    if (selectedItems.isEmpty()) {
+        QMessageBox::warning(this, "Selection Error", "Please select an order to update.");
+        return;
+    }
+
+    int selectedRow = selectedItems.first()->row();
+    int orderId = ui->ordersTableWidget->item(selectedRow, 0)->data(Qt::UserRole).toInt();
+
+    // Get new status from user
+    QStringList statuses = {"Pending", "Preparing", "Out for Delivery", "Delivered", "Cancelled"};
+    bool ok;
+    QString newStatus = QInputDialog::getItem(this, "Update Order Status", "Select the new status for the order:", statuses, 0, false, &ok);
+
+    if (ok && !newStatus.isEmpty()) {
+        QSqlDatabase db = QSqlDatabase::database();
+        if (!db.isOpen()) return;
+
+        QSqlQuery query(db);
+        query.prepare("UPDATE orders SET order_status = ? WHERE id = ?");
+        query.addBindValue(newStatus);
+        query.addBindValue(orderId);
+
+        if (query.exec()) {
+            QMessageBox::information(this, "Success", "Order status updated successfully!");
+            load_orders(); // Refresh the table
+        } else {
+            QMessageBox::critical(this, "Database Error", "Failed to update order status: " + query.lastError().text());
         }
     }
 }

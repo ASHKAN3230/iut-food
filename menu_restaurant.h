@@ -34,6 +34,10 @@ public:
 
     void clear_form();
 
+    void load_orders();
+
+    void populate_orders_table();
+
     static int index;
 
     std::string message;
@@ -66,6 +70,10 @@ public slots:
     void on_profile_button_clicked();
 
     void on_logout_button_clicked();
+
+    void on_refreshOrdersButton_clicked();
+
+    void on_updateStatusButton_clicked();
 
 private:
     Ui::menu_restaurant *ui;
