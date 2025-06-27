@@ -19,14 +19,14 @@
   <layout class="QVBoxLayout" name="mainLayout">
    <item>
     <widget class="QLabel" name="titleLabel">
+     <property name="styleSheet">
+      <string notr="true">font: bold 24pt 'Segoe UI'; color: #fff; margin: 20px 0 10px 0;</string>
+     </property>
      <property name="text">
       <string>Restaurant Dashboard</string>
      </property>
      <property name="alignment">
-      <set>Qt::AlignCenter</set>
-     </property>
-     <property name="styleSheet">
-      <string notr="true">font: bold 24pt 'Segoe UI'; color: #fff; margin: 20px 0 10px 0;</string>
+      <set>Qt::AlignmentFlag::AlignCenter</set>
      </property>
     </widget>
    </item>
@@ -34,9 +34,6 @@
     <layout class="QHBoxLayout" name="navLayout">
      <item>
       <widget class="QPushButton" name="shopping_basket_button">
-       <property name="text">
-        <string>Shopping Basket</string>
-       </property>
        <property name="toolTip">
         <string>View shopping basket</string>
        </property>
@@ -50,13 +47,13 @@ border-top: 1px solid rgba(255,0,0,200);
 border-left: 1px solid rgba(255,0,0,200);
 border-right: 1px solid rgba(255,0,0,200);</string>
        </property>
+       <property name="text">
+        <string>Shopping Basket</string>
+       </property>
       </widget>
      </item>
      <item>
       <widget class="QPushButton" name="profile_button">
-       <property name="text">
-        <string>Restaurant Profile</string>
-       </property>
        <property name="toolTip">
         <string>View or edit restaurant profile</string>
        </property>
@@ -70,13 +67,13 @@ border-top: 1px solid rgba(255,0,0,200);
 border-left: 1px solid rgba(255,0,0,200);
 border-right: 1px solid rgba(255,0,0,200);</string>
        </property>
+       <property name="text">
+        <string>Restaurant Profile</string>
+       </property>
       </widget>
      </item>
      <item>
       <widget class="QPushButton" name="logout_button">
-       <property name="text">
-        <string>Logout</string>
-       </property>
        <property name="toolTip">
         <string>Logout from dashboard</string>
        </property>
@@ -90,6 +87,9 @@ border-top: 1px solid rgba(255,0,0,200);
 border-left: 1px solid rgba(255,0,0,200);
 border-right: 1px solid rgba(255,0,0,200);</string>
        </property>
+       <property name="text">
+        <string>Logout</string>
+       </property>
       </widget>
      </item>
     </layout>
@@ -97,93 +97,145 @@ border-right: 1px solid rgba(255,0,0,200);</string>
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="styleSheet">
-      <string notr="true">font: 700 12pt 'Segoe UI'; color: #222; background: #fff; border-radius: 10px; margin-top: 20px;</string>
+      <string notr="true">
+QTabWidget::pane {
+    background: transparent;
+    border: none;
+}
+QTabBar::tab {
+    background: rgba(90,0,0,120);
+    color: #fff;
+    border-radius: 12px 12px 0 0;
+    padding: 8px 24px;
+    font: 700 12pt 'Segoe UI';
+}
+QTabBar::tab:selected {
+    background: #7a1f1f;
+    color: #fff;
+}
+QWidget#menuTab, QWidget#ordersTab {
+    background-color: rgba(90,0,0,120);
+    border-radius: 12px;
+}
+</string>
+     </property>
+     <property name="currentIndex">
+      <number>0</number>
      </property>
      <widget class="QWidget" name="menuTab">
+      <property name="styleSheet">
+       <string notr="true">background-color: rgba(90,0,0,120);
+border-radius: 12px;</string>
+      </property>
       <attribute name="title">
        <string>Menu Management</string>
       </attribute>
       <layout class="QVBoxLayout" name="menuTabLayout">
        <item>
         <widget class="QGroupBox" name="foodManagementGroup">
+         <property name="styleSheet">
+          <string notr="true">background-color: rgba(90,0,0,120);
+border: 2px solid #7a1f1f;
+border-radius: 12px;
+color: #fff;
+font: 700 14pt 'Segoe UI';
+margin-top: 10px;</string>
+         </property>
          <property name="title">
           <string>Food Management</string>
-         </property>
-         <property name="styleSheet">
-          <string notr="true">color: #fff; font: 700 14pt 'Segoe UI'; background: #7a1f1f; border-radius: 10px; margin-top: 10px;</string>
          </property>
          <layout class="QFormLayout" name="foodFormLayout">
           <item row="0" column="0">
            <widget class="QLabel" name="foodTypeLabel">
-            <property name="text">
-             <string>Food Type:</string>
-            </property>
             <property name="styleSheet">
              <string notr="true">color: #fff; font: 700 11pt 'Segoe UI';</string>
+            </property>
+            <property name="text">
+             <string>Food Type:</string>
             </property>
            </widget>
           </item>
           <item row="0" column="1">
            <widget class="QLineEdit" name="foodTypeEdit">
             <property name="styleSheet">
-             <string notr="true">background: #fff; border: 1px solid #ccc; border-radius: 5px; color: #222;</string>
+             <string notr="true">background-color: rgba(90,0,0,120);
+border: none;
+border-bottom: 2px solid #7a1f1f;
+color: #fff;
+font: 700 11pt 'Segoe UI';
+border-radius: 6px;</string>
             </property>
            </widget>
           </item>
           <item row="1" column="0">
            <widget class="QLabel" name="foodNameLabel">
-            <property name="text">
-             <string>Food Name:</string>
-            </property>
             <property name="styleSheet">
              <string notr="true">color: #fff; font: 700 11pt 'Segoe UI';</string>
+            </property>
+            <property name="text">
+             <string>Food Name:</string>
             </property>
            </widget>
           </item>
           <item row="1" column="1">
            <widget class="QLineEdit" name="foodNameEdit">
             <property name="styleSheet">
-             <string notr="true">background: #fff; border: 1px solid #ccc; border-radius: 5px; color: #222;</string>
+             <string notr="true">background-color: rgba(90,0,0,120);
+border: none;
+border-bottom: 2px solid #7a1f1f;
+color: #fff;
+font: 700 11pt 'Segoe UI';
+border-radius: 6px;</string>
             </property>
            </widget>
           </item>
           <item row="2" column="0">
            <widget class="QLabel" name="foodDetailsLabel">
-            <property name="text">
-             <string>Details:</string>
-            </property>
             <property name="styleSheet">
              <string notr="true">color: #fff; font: 700 11pt 'Segoe UI';</string>
+            </property>
+            <property name="text">
+             <string>Details:</string>
             </property>
            </widget>
           </item>
           <item row="2" column="1">
            <widget class="QLineEdit" name="foodDetailsEdit">
             <property name="styleSheet">
-             <string notr="true">background: #fff; border: 1px solid #ccc; border-radius: 5px; color: #222;</string>
+             <string notr="true">background-color: rgba(90,0,0,120);
+border: none;
+border-bottom: 2px solid #7a1f1f;
+color: #fff;
+font: 700 11pt 'Segoe UI';
+border-radius: 6px;</string>
             </property>
            </widget>
           </item>
           <item row="3" column="0">
            <widget class="QLabel" name="priceLabel">
-            <property name="text">
-             <string>Price:</string>
-            </property>
             <property name="styleSheet">
              <string notr="true">color: #fff; font: 700 11pt 'Segoe UI';</string>
+            </property>
+            <property name="text">
+             <string>Price:</string>
             </property>
            </widget>
           </item>
           <item row="3" column="1">
            <widget class="QSpinBox" name="priceSpinBox">
+            <property name="styleSheet">
+             <string notr="true">background-color: rgba(90,0,0,120);
+border: none;
+border-bottom: 2px solid #7a1f1f;
+color: #fff;
+font: 700 11pt 'Segoe UI';
+border-radius: 6px;</string>
+            </property>
             <property name="minimum">
              <number>0</number>
             </property>
             <property name="maximum">
              <number>999999</number>
-            </property>
-            <property name="styleSheet">
-             <string notr="true">background: #fff; border: 1px solid #ccc; border-radius: 5px; color: #222;</string>
             </property>
            </widget>
           </item>
@@ -191,9 +243,6 @@ border-right: 1px solid rgba(255,0,0,200);</string>
            <layout class="QHBoxLayout" name="foodButtonLayout">
             <item>
              <widget class="QPushButton" name="addFoodButton">
-              <property name="text">
-               <string>Add Food</string>
-              </property>
               <property name="toolTip">
                <string>Add a new food item</string>
               </property>
@@ -207,13 +256,13 @@ border-top: 1px solid rgba(255,0,0,200);
 border-left: 1px solid rgba(255,0,0,200);
 border-right: 1px solid rgba(255,0,0,200);</string>
               </property>
+              <property name="text">
+               <string>Add Food</string>
+              </property>
              </widget>
             </item>
             <item>
              <widget class="QPushButton" name="editFoodButton">
-              <property name="text">
-               <string>Edit Food</string>
-              </property>
               <property name="toolTip">
                <string>Edit selected food item</string>
               </property>
@@ -227,13 +276,13 @@ border-top: 1px solid rgba(255,0,0,200);
 border-left: 1px solid rgba(255,0,0,200);
 border-right: 1px solid rgba(255,0,0,200);</string>
               </property>
+              <property name="text">
+               <string>Edit Food</string>
+              </property>
              </widget>
             </item>
             <item>
              <widget class="QPushButton" name="deleteFoodButton">
-              <property name="text">
-               <string>Delete Food</string>
-              </property>
               <property name="toolTip">
                <string>Delete selected food item</string>
               </property>
@@ -247,13 +296,13 @@ border-top: 1px solid rgba(255,0,0,200);
 border-left: 1px solid rgba(255,0,0,200);
 border-right: 1px solid rgba(255,0,0,200);</string>
               </property>
+              <property name="text">
+               <string>Delete Food</string>
+              </property>
              </widget>
             </item>
             <item>
              <widget class="QPushButton" name="clearFormButton">
-              <property name="text">
-               <string>Clear Form</string>
-              </property>
               <property name="toolTip">
                <string>Clear all input fields</string>
               </property>
@@ -267,6 +316,9 @@ border-top: 1px solid rgba(255,0,0,200);
 border-left: 1px solid rgba(255,0,0,200);
 border-right: 1px solid rgba(255,0,0,200);</string>
               </property>
+              <property name="text">
+               <string>Clear Form</string>
+              </property>
              </widget>
             </item>
            </layout>
@@ -276,17 +328,49 @@ border-right: 1px solid rgba(255,0,0,200);</string>
        </item>
        <item>
         <widget class="QGroupBox" name="menuDisplayGroup">
+         <property name="styleSheet">
+          <string notr="true">background-color: rgba(90,0,0,120);
+border: 2px solid #7a1f1f;
+border-radius: 12px;
+color: #fff;
+font: 700 14pt 'Segoe UI';
+margin-top: 10px;</string>
+         </property>
          <property name="title">
           <string>Menu Items</string>
-         </property>
-         <property name="styleSheet">
-          <string notr="true">color: #fff; font: 700 14pt 'Segoe UI'; background: #7a1f1f; border-radius: 10px; margin-top: 10px;</string>
          </property>
          <layout class="QVBoxLayout" name="menuTableLayout">
           <item>
            <widget class="QTableWidget" name="menuTableWidget">
             <property name="styleSheet">
-             <string notr="true">background: #fff; color: #222; border-radius: 5px; font: 11pt 'Segoe UI';</string>
+             <string notr="true">
+QTableWidget {
+    background-color: rgba(90,0,0,120);
+    border: 2px solid #7a1f1f;
+    border-radius: 12px;
+    color: #fff;
+    font: 11pt 'Segoe UI';
+    selection-background-color: #7a1f1f;
+    selection-color: #fff;
+    gridline-color: #7a1f1f;
+    alternate-background-color: rgba(90,0,0,80);
+}
+QHeaderView::section {
+    background-color: #7a1f1f;
+    color: #fff;
+    font: 700 11pt 'Segoe UI';
+    border: none;
+    border-radius: 0;
+    padding: 6px;
+}
+QTableCornerButton::section {
+    background-color: #7a1f1f;
+    border: none;
+}
+QScrollBar:vertical, QScrollBar:horizontal {
+    background: rgba(90,0,0,80);
+}
+</string>
             </property>
            </widget>
           </item>
@@ -296,38 +380,71 @@ border-right: 1px solid rgba(255,0,0,200);</string>
       </layout>
      </widget>
      <widget class="QWidget" name="ordersTab">
+      <property name="styleSheet">
+       <string notr="true">background-color: rgba(90,0,0,120);
+border-radius: 12px;</string>
+      </property>
       <attribute name="title">
        <string>Order Management</string>
       </attribute>
       <layout class="QVBoxLayout" name="ordersTabLayout">
        <item>
         <widget class="QGroupBox" name="orderManagementGroup">
+         <property name="styleSheet">
+          <string notr="true">background-color: rgba(90,0,0,120);
+border: 2px solid #7a1f1f;
+border-radius: 12px;
+color: #fff;
+font: 700 14pt 'Segoe UI';
+margin-top: 10px;</string>
+         </property>
          <property name="title">
           <string>Incoming Orders</string>
-         </property>
-         <property name="styleSheet">
-          <string notr="true">color: #fff; font: 700 14pt 'Segoe UI'; background: #7a1f1f; border-radius: 10px; margin-top: 10px;</string>
          </property>
          <layout class="QVBoxLayout" name="ordersTableLayout">
           <item>
            <widget class="QTableWidget" name="ordersTableWidget">
             <property name="styleSheet">
-             <string notr="true">background: #fff; color: #222; border-radius: 5px; font: 11pt 'Segoe UI';</string>
+             <string notr="true">
+QTableWidget {
+    background-color: rgba(90,0,0,120);
+    border: 2px solid #7a1f1f;
+    border-radius: 12px;
+    color: #fff;
+    font: 11pt 'Segoe UI';
+    selection-background-color: #7a1f1f;
+    selection-color: #fff;
+    gridline-color: #7a1f1f;
+    alternate-background-color: rgba(90,0,0,80);
+}
+QHeaderView::section {
+    background-color: #7a1f1f;
+    color: #fff;
+    font: 700 11pt 'Segoe UI';
+    border: none;
+    border-radius: 0;
+    padding: 6px;
+}
+QTableCornerButton::section {
+    background-color: #7a1f1f;
+    border: none;
+}
+QScrollBar:vertical, QScrollBar:horizontal {
+    background: rgba(90,0,0,80);
+}
+</string>
             </property>
            </widget>
           </item>
-         </layout>
-         <layout class="QHBoxLayout" name="ordersButtonLayout">
           <item>
-           <widget class="QPushButton" name="refreshOrdersButton">
-            <property name="text">
-             <string>Refresh Orders</string>
-            </property>
-            <property name="toolTip">
-             <string>Reload the list of orders</string>
-            </property>
-            <property name="styleSheet">
-             <string notr="true">background-color: rgba(0,0,0,0);
+           <layout class="QHBoxLayout" name="ordersButtonLayout">
+            <item>
+             <widget class="QPushButton" name="refreshOrdersButton">
+              <property name="toolTip">
+               <string>Reload the list of orders</string>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">background-color: rgba(0,0,0,0);
 border: none;
 color: rgb(255, 255, 255);
 font: 700 12pt 'Segoe UI';
@@ -335,19 +452,19 @@ border-bottom: 1px solid rgba(255,0,0,200);
 border-top: 1px solid rgba(255,0,0,200);
 border-left: 1px solid rgba(255,0,0,200);
 border-right: 1px solid rgba(255,0,0,200);</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="updateStatusButton">
-            <property name="text">
-             <string>Update Status</string>
-            </property>
-            <property name="toolTip">
-             <string>Update the status of the selected order</string>
-            </property>
-            <property name="styleSheet">
-             <string notr="true">background-color: rgba(0,0,0,0);
+              </property>
+              <property name="text">
+               <string>Refresh Orders</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="updateStatusButton">
+              <property name="toolTip">
+               <string>Update the status of the selected order</string>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">background-color: rgba(0,0,0,0);
 border: none;
 color: rgb(255, 255, 255);
 font: 700 12pt 'Segoe UI';
@@ -355,8 +472,13 @@ border-bottom: 1px solid rgba(255,0,0,200);
 border-top: 1px solid rgba(255,0,0,200);
 border-left: 1px solid rgba(255,0,0,200);
 border-right: 1px solid rgba(255,0,0,200);</string>
-            </property>
-           </widget>
+              </property>
+              <property name="text">
+               <string>Update Status</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
           </item>
          </layout>
         </widget>
