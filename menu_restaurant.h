@@ -27,6 +27,12 @@ public:
 
     void receive_message();
 
+    void save_menu_to_file();
+
+    void refresh_menu_display();
+
+    void clear_form();
+
     static int index;
 
     std::string message;
@@ -52,8 +58,21 @@ public slots:
 
     void send_message();
 
+    void on_addFoodButton_clicked();
+
+    void on_editFoodButton_clicked();
+
+    void on_deleteFoodButton_clicked();
+
+    void on_clearFormButton_clicked();
+
+    void on_menuItem_selected();
+
 private:
     Ui::menu_restaurant *ui;
+    QString selectedFoodType;
+    QString selectedFoodName;
+    int selectedItemIndex;
 };
 
 #endif // MENU_RESTAURANT_H
