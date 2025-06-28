@@ -1,9 +1,10 @@
 #include "sign_in.h"
 #include "ui_sign_in.h"
 #include "mainwindow.h"
-#include<QString>
-#include<QFile>
-#include<QMessageBox>
+#include "network_manager.h"
+#include <QString>
+#include <QFile>
+#include <QMessageBox>
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QSqlError>
@@ -13,6 +14,12 @@ sign_in::sign_in(QWidget *parent)
     , ui(new Ui::sign_in)
 {
     ui->setupUi(this);
+
+    // Connect network manager signals
+    NetworkManager* netManager = NetworkManager::getInstance();
+    connect(netManager, &NetworkManager::registerSuccess, this, &sign_in::onRegisterSuccess);
+    connect(netManager, &NetworkManager::registerFailed, this, &sign_in::onRegisterFailed);
+    connect(netManager, &NetworkManager::networkError, this, &sign_in::onNetworkError);
 
     back_button = new QPushButton();
 
@@ -88,32 +95,32 @@ void sign_in::on_sign_in_button_clicked()
         return;
     }
 
-    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
-    db.setDatabaseName("iut_food.db");
-    if (!db.open()) {
-        QMessageBox::critical(this, "Database Error", db.lastError().text());
+    if (username_line.isEmpty() || password_line.isEmpty()) {
+        QMessageBox::warning(this, "Input Error", "Please enter both username and password");
         return;
     }
-    // Create users table if it doesn't exist
-    QSqlQuery createQuery;
-    createQuery.exec("CREATE TABLE IF NOT EXISTS users ("
-                    "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-                    "username TEXT NOT NULL UNIQUE,"
-                    "password TEXT NOT NULL,"
-                    "user_type TEXT NOT NULL CHECK(user_type IN ('customer', 'manager', 'restaurant'))"
-                    ");");
 
-    QSqlQuery query;
-    query.prepare("INSERT INTO users (username, password, user_type) VALUES (?, ?, ?)");
-    query.addBindValue(username_line);
-    query.addBindValue(password_line);
-    query.addBindValue(userType);
-    if (query.exec()) {
-        QMessageBox::information(this, "success", "Sign in is successful");
-        // Optionally, open the relevant page here
-    } else {
-        QMessageBox::warning(this, "fail", "Sign in failed: " + query.lastError().text());
-    }
+    // Use network manager for registration
+    NetworkManager* netManager = NetworkManager::getInstance();
+    netManager->registerUser(username_line, password_line, userType);
+}
+
+void sign_in::onRegisterSuccess(const QString &message)
+{
+    QMessageBox::information(this, "Success", message);
+    // Optionally, go back to login page or auto-login
+    on_back_button_clicked();
+}
+
+void sign_in::onRegisterFailed(const QString &error)
+{
+    QMessageBox::warning(this, "Registration Failed", error);
+}
+
+void sign_in::onNetworkError(const QString &error)
+{
+    QMessageBox::critical(this, "Network Error", 
+                         QString("Network error: %1\n\nPlease check if the server is running.").arg(error));
 }
 
 void sign_in::send_message()

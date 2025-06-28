@@ -2,10 +2,11 @@
 #define SIGN_IN_H
 
 #include <QWidget>
-#include<QPushButton>
-#include<string>
-#include<QTcpSocket>
-#include<QTcpServer>
+#include <QPushButton>
+#include <QString>
+#include <string>
+#include <QTcpSocket>
+#include <QTcpServer>
 
 namespace Ui {
 class sign_in;
@@ -45,6 +46,11 @@ public slots:
     void on_sign_in_button_clicked();
 
     void send_message();
+    
+    // Network manager slots
+    void onRegisterSuccess(const QString &message);
+    void onRegisterFailed(const QString &error);
+    void onNetworkError(const QString &error);
 
 private:
     Ui::sign_in *ui;

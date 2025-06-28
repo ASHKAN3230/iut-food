@@ -1,4 +1,4 @@
-QT       += core gui sql
+QT       += core gui sql network
 
 QT += core network
 
@@ -20,6 +20,7 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp \
     menu_restaurant.cpp \
+    network_manager.cpp \
     order.cpp \
     rate.cpp \
     restaurant_auth.cpp \
@@ -34,6 +35,7 @@ HEADERS += \
     forgot_password.h \
     mainwindow.h \
     menu_restaurant.h \
+    network_manager.h \
     order.h \
     rate.h \
     restaurant_auth.h \

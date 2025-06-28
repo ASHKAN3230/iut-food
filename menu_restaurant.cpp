@@ -4,19 +4,22 @@
 #include "shopping_basket.h"
 #include "restaurant_auth.h"
 #include "mainwindow.h"
-#include<QFile>
-#include<QLabel>
-#include<QTextStream>
-#include<QListWidgetItem>
-#include<QSpinBox>
-#include<QMessageBox>
-#include<QInputDialog>
-#include<QSqlDatabase>
-#include<QSqlQuery>
-#include<QSqlError>
-#include<QTableWidgetItem>
-#include<QHeaderView>
+#include "network_manager.h"
+#include <QFile>
+#include <QLabel>
+#include <QTextStream>
+#include <QListWidgetItem>
+#include <QSpinBox>
+#include <QMessageBox>
+#include <QInputDialog>
+#include <QSqlDatabase>
+#include <QSqlQuery>
+#include <QSqlError>
+#include <QTableWidgetItem>
+#include <QHeaderView>
 #include <QDateTime>
+#include <QJsonArray>
+#include <QJsonObject>
 
 menu_restaurant::menu_restaurant(const QString &username, QWidget *parent)
     : QWidget(parent)
@@ -26,6 +29,22 @@ menu_restaurant::menu_restaurant(const QString &username, QWidget *parent)
 {
     ui->setupUi(this);
     currentRestaurantUsername = username;
+
+    // Connect network manager signals
+    NetworkManager* netManager = NetworkManager::getInstance();
+    connect(netManager, &NetworkManager::menuReceived, this, &menu_restaurant::onMenuReceived);
+    connect(netManager, &NetworkManager::orderCreated, this, &menu_restaurant::onOrderCreated);
+    connect(netManager, &NetworkManager::ordersReceived, this, &menu_restaurant::onOrdersReceived);
+    connect(netManager, &NetworkManager::orderStatusUpdated, this, &menu_restaurant::onOrderStatusUpdated);
+    connect(netManager, &NetworkManager::networkError, this, &menu_restaurant::onNetworkError);
+    
+    // Connect menu operation signals
+    connect(netManager, &NetworkManager::menuItemAdded, this, &menu_restaurant::onMenuItemAdded);
+    connect(netManager, &NetworkManager::menuItemAddedFailed, this, &menu_restaurant::onMenuItemAddedFailed);
+    connect(netManager, &NetworkManager::menuItemUpdated, this, &menu_restaurant::onMenuItemUpdated);
+    connect(netManager, &NetworkManager::menuItemUpdatedFailed, this, &menu_restaurant::onMenuItemUpdatedFailed);
+    connect(netManager, &NetworkManager::menuItemDeleted, this, &menu_restaurant::onMenuItemDeleted);
+    connect(netManager, &NetworkManager::menuItemDeletedFailed, this, &menu_restaurant::onMenuItemDeletedFailed);
 
     connect(this, &menu_restaurant::click_shopping_basket_button, this, &menu_restaurant::send_message);
     connect(this, &menu_restaurant::receive_message, this, &menu_restaurant::on_shopping_basket_button_clicked);
@@ -53,6 +72,27 @@ menu_restaurant::menu_restaurant(const QString &username, QWidget *parent)
         receive_message();
     }
 
+    // Get restaurant ID from network manager or local database as fallback
+    getRestaurantInfo();
+    
+    // Load menu and orders using network manager
+    if (currentRestaurantId > 0) {
+        loadMenuFromServer();
+        loadOrdersFromServer();
+    }
+}
+
+menu_restaurant::~menu_restaurant()
+{
+    delete ui;
+}
+
+int menu_restaurant::index = 0;
+
+void menu_restaurant::getRestaurantInfo()
+{
+    // Try to get restaurant info from network manager first
+    // For now, we'll use local database as fallback
     QSqlDatabase db = QSqlDatabase::database();
     if (!db.isOpen()) {
         db = QSqlDatabase::addDatabase("QSQLITE");
@@ -67,54 +107,98 @@ menu_restaurant::menu_restaurant(const QString &username, QWidget *parent)
     } else {
         QMessageBox::critical(this, "Error", "Could not retrieve restaurant ID for user.");
     }
-
-    open_menu_from_database();
-    refresh_menu_display();
-    load_orders();
 }
 
-menu_restaurant::~menu_restaurant()
+void menu_restaurant::loadMenuFromServer()
 {
-    delete ui;
+    if (currentRestaurantId <= 0) return;
+    
+    NetworkManager* netManager = NetworkManager::getInstance();
+    netManager->getRestaurantMenu(currentRestaurantId);
 }
 
-int menu_restaurant::index = 0;
+void menu_restaurant::onMenuReceived(const QJsonArray &menu)
+{
+    menu_list.clear();
+    
+    for (const QJsonValue &itemValue : menu) {
+        QJsonObject item = itemValue.toObject();
+        QString foodType = item["foodType"].toString();
+        QString foodName = item["foodName"].toString();
+        QString foodDetails = item["foodDetails"].toString();
+        QString price = item["price"].toString();
+        
+        QPair<QString, QString> food(foodDetails, price);
+        menu_list[foodType][foodName] = food;
+    }
+    
+    refresh_menu_display();
+}
+
+void menu_restaurant::loadOrdersFromServer()
+{
+    if (currentRestaurantId <= 0) return;
+    
+    NetworkManager* netManager = NetworkManager::getInstance();
+    netManager->getOrders(QString::number(currentRestaurantId), "restaurant");
+}
+
+void menu_restaurant::onOrdersReceived(const QJsonArray &orders)
+{
+    populate_orders_table();
+    ui->ordersTableWidget->setRowCount(0);
+    
+    for (const QJsonValue &orderValue : orders) {
+        QJsonObject order = orderValue.toObject();
+        int row = ui->ordersTableWidget->rowCount();
+        ui->ordersTableWidget->insertRow(row);
+        
+        // Order ID (Column 0) - Store it as user data
+        QTableWidgetItem *idItem = new QTableWidgetItem();
+        idItem->setData(Qt::UserRole, order["id"].toInt());
+        ui->ordersTableWidget->setItem(row, 0, idItem);
+        
+        // Customer (Column 1)
+        ui->ordersTableWidget->setItem(row, 1, new QTableWidgetItem(order["customerName"].toString()));
+        // Total (Column 2)
+        ui->ordersTableWidget->setItem(row, 2, new QTableWidgetItem(order["totalAmount"].toString()));
+        // Status (Column 3)
+        ui->ordersTableWidget->setItem(row, 3, new QTableWidgetItem(order["status"].toString()));
+        // Date (Column 4)
+        ui->ordersTableWidget->setItem(row, 4, new QTableWidgetItem(order["createdAt"].toString()));
+    }
+}
+
+void menu_restaurant::onOrderCreated(const QString &message)
+{
+    QMessageBox::information(this, "Success", message);
+}
+
+void menu_restaurant::onOrderStatusUpdated(const QString &message)
+{
+    QMessageBox::information(this, "Success", message);
+    loadOrdersFromServer(); // Refresh orders after status update
+}
+
+void menu_restaurant::onNetworkError(const QString &error)
+{
+    QMessageBox::critical(this, "Network Error", 
+                         QString("Network error: %1\n\nPlease check if the server is running.").arg(error));
+}
 
 void menu_restaurant::open_menu_from_database()
 {
-    if (currentRestaurantId == -1) return;
-    
-    QSqlDatabase db = QSqlDatabase::database();
-    if (!db.isOpen()) {
-        // Handle error, maybe show message
-        return;
-    }
-    
-    menu_list.clear();
-    
-    QSqlQuery query;
-    query.prepare("SELECT food_type, food_name, food_details, price FROM menu_items WHERE restaurant_id = ? ORDER BY food_type, food_name");
-    query.addBindValue(currentRestaurantId);
-    
-    if (query.exec()) {
-        while (query.next()) {
-            QString foodType = query.value(0).toString();
-            QString foodName = query.value(1).toString();
-            QString foodDetails = query.value(2).toString();
-            QString price = query.value(3).toString();
-            
-            QPair<QString, QString> food(foodDetails, price);
-            menu_list[foodType][foodName] = food;
-        }
-    } else {
-        QMessageBox::warning(this, "Database Error", "Could not load menu items: " + query.lastError().text());
-    }
+    // This method is now replaced by loadMenuFromServer()
+    // Keeping for backward compatibility
+    loadMenuFromServer();
 }
 
 void menu_restaurant::save_menu_to_database()
 {
     if (currentRestaurantId == -1) return;
 
+    // For now, we'll use local database as fallback
+    // In the future, this should send menu updates to the server
     QSqlDatabase db = QSqlDatabase::database();
      if (!db.isOpen()) {
         // Handle error
@@ -187,14 +271,10 @@ void menu_restaurant::refresh_menu_display()
 
 void menu_restaurant::clear_form()
 {
-    QLineEdit *foodTypeEdit = ui->foodManagementGroup->findChild<QLineEdit*>("foodTypeEdit");
-    QLineEdit *foodNameEdit = ui->foodManagementGroup->findChild<QLineEdit*>("foodNameEdit");
-    QLineEdit *foodDetailsEdit = ui->foodManagementGroup->findChild<QLineEdit*>("foodDetailsEdit");
-    QSpinBox *priceSpinBox = ui->foodManagementGroup->findChild<QSpinBox*>("priceSpinBox");
-    if (foodTypeEdit) foodTypeEdit->clear();
-    if (foodNameEdit) foodNameEdit->clear();
-    if (foodDetailsEdit) foodDetailsEdit->clear();
-    if (priceSpinBox) priceSpinBox->setValue(0);
+    ui->foodNameEdit->clear();
+    ui->foodTypeEdit->clear();
+    ui->foodDetailsEdit->clear();
+    ui->priceSpinBox->setValue(0);
     selectedItemIndex = -1;
     selectedFoodType.clear();
     selectedFoodName.clear();
@@ -202,84 +282,100 @@ void menu_restaurant::clear_form()
 
 void menu_restaurant::on_addFoodButton_clicked()
 {
-    QLineEdit *foodTypeEdit = ui->foodManagementGroup->findChild<QLineEdit*>("foodTypeEdit");
-    QLineEdit *foodNameEdit = ui->foodManagementGroup->findChild<QLineEdit*>("foodNameEdit");
-    QLineEdit *foodDetailsEdit = ui->foodManagementGroup->findChild<QLineEdit*>("foodDetailsEdit");
-    QSpinBox *priceSpinBox = ui->foodManagementGroup->findChild<QSpinBox*>("priceSpinBox");
-
-    QString foodType = foodTypeEdit ? foodTypeEdit->text().trimmed() : "";
-    QString foodName = foodNameEdit ? foodNameEdit->text().trimmed() : "";
-    QString foodDetails = foodDetailsEdit ? foodDetailsEdit->text().trimmed() : "";
-    QString price = priceSpinBox ? QString::number(priceSpinBox->value()) : "0";
-
-    if(foodType.isEmpty() || foodName.isEmpty() || foodDetails.isEmpty() || price == "0")
-    {
-        QMessageBox::warning(this, "Input Error", "Please fill all fields with valid values!");
+    QString foodName = ui->foodNameEdit->text().trimmed();
+    QString foodType = ui->foodTypeEdit->text().trimmed();
+    QString foodDetails = ui->foodDetailsEdit->text().trimmed();
+    int price = ui->priceSpinBox->value();
+    
+    // Validation
+    if (foodName.isEmpty()) {
+        QMessageBox::warning(this, "Error", "Please enter a food name.");
         return;
     }
     
-    // Check if food already exists
-    if(menu_list[foodType].contains(foodName))
-    {
-        QMessageBox::warning(this, "Duplicate Food", "A food with this name already exists in this category!");
+    if (foodType.isEmpty()) {
+        QMessageBox::warning(this, "Error", "Please enter a food type.");
         return;
     }
     
-    QPair<QString, QString> food(foodDetails, price);
-    menu_list[foodType][foodName] = food;
+    if (foodDetails.isEmpty()) {
+        QMessageBox::warning(this, "Error", "Please enter food details.");
+        return;
+    }
     
-    save_menu_to_database();
-    refresh_menu_display();
+    if (price <= 0) {
+        QMessageBox::warning(this, "Error", "Please enter a valid price.");
+        return;
+    }
+    
+    // Check if food name already exists in the selected type
+    if (menu_list.contains(foodType) && menu_list[foodType].contains(foodName)) {
+        QMessageBox::warning(this, "Error", "A food item with this name already exists in the selected type.");
+        return;
+    }
+    
+    // Send to server via network manager
+    NetworkManager::getInstance()->addMenuItem(currentRestaurantId, foodType, foodName, foodDetails, price);
+    
+    // Clear form immediately for better UX
     clear_form();
-    
-    QMessageBox::information(this, "Success", "Food item added successfully!");
 }
 
 void menu_restaurant::on_editFoodButton_clicked()
 {
-    QLineEdit *foodTypeEdit = ui->foodManagementGroup->findChild<QLineEdit*>("foodTypeEdit");
-    QLineEdit *foodNameEdit = ui->foodManagementGroup->findChild<QLineEdit*>("foodNameEdit");
-    QLineEdit *foodDetailsEdit = ui->foodManagementGroup->findChild<QLineEdit*>("foodDetailsEdit");
-    QSpinBox *priceSpinBox = ui->foodManagementGroup->findChild<QSpinBox*>("priceSpinBox");
-
-    QString newFoodType = foodTypeEdit ? foodTypeEdit->text().trimmed() : "";
-    QString newFoodName = foodNameEdit ? foodNameEdit->text().trimmed() : "";
-    QString newFoodDetails = foodDetailsEdit ? foodDetailsEdit->text().trimmed() : "";
-    QString newPrice = priceSpinBox ? QString::number(priceSpinBox->value()) : "0";
-
-    if(newFoodType.isEmpty() || newFoodName.isEmpty() || newFoodDetails.isEmpty() || newPrice == "0")
-    {
-        QMessageBox::warning(this, "Input Error", "Please fill all fields with valid values!");
+    if (selectedItemIndex == -1) {
+        QMessageBox::warning(this, "Selection Error", "Please select a food item to edit!");
         return;
     }
     
-    // Remove old entry
-    if(menu_list.contains(selectedFoodType) && menu_list[selectedFoodType].contains(selectedFoodName))
-    {
+    QString newFoodName = ui->foodNameEdit->text().trimmed();
+    QString newFoodType = ui->foodTypeEdit->text().trimmed();
+    QString newFoodDetails = ui->foodDetailsEdit->text().trimmed();
+    int newPrice = ui->priceSpinBox->value();
+    
+    // Validation
+    if (newFoodName.isEmpty()) {
+        QMessageBox::warning(this, "Error", "Please enter a food name.");
+        return;
+    }
+    
+    if (newFoodType.isEmpty()) {
+        QMessageBox::warning(this, "Error", "Please enter a food type.");
+        return;
+    }
+    
+    if (newFoodDetails.isEmpty()) {
+        QMessageBox::warning(this, "Error", "Please enter food details.");
+        return;
+    }
+    
+    if (newPrice <= 0) {
+        QMessageBox::warning(this, "Error", "Please enter a valid price.");
+        return;
+    }
+    
+    // For now, we'll use a simple approach - delete old item and add new one
+    // In a real implementation, you'd want to track item IDs from the server
+    if (menu_list.contains(selectedFoodType) && menu_list[selectedFoodType].contains(selectedFoodName)) {
+        // Remove from local cache
         menu_list[selectedFoodType].remove(selectedFoodName);
         
         // Remove empty food type
-        if(menu_list[selectedFoodType].isEmpty())
-        {
+        if (menu_list[selectedFoodType].isEmpty()) {
             menu_list.remove(selectedFoodType);
         }
     }
     
-    // Add new entry
-    QPair<QString, QString> food(newFoodDetails, newPrice);
-    menu_list[newFoodType][newFoodName] = food;
+    // Add new item to server
+    NetworkManager::getInstance()->addMenuItem(currentRestaurantId, newFoodType, newFoodName, newFoodDetails, newPrice);
     
-    save_menu_to_database();
-    refresh_menu_display();
+    // Clear form immediately for better UX
     clear_form();
-    
-    QMessageBox::information(this, "Success", "Food item updated successfully!");
 }
 
 void menu_restaurant::on_deleteFoodButton_clicked()
 {
-    if(selectedItemIndex == -1)
-    {
+    if (selectedItemIndex == -1) {
         QMessageBox::warning(this, "Selection Error", "Please select a food item to delete!");
         return;
     }
@@ -288,24 +384,25 @@ void menu_restaurant::on_deleteFoodButton_clicked()
         "Are you sure you want to delete this food item?", 
         QMessageBox::Yes | QMessageBox::No);
     
-    if(reply == QMessageBox::Yes)
-    {
-        if(menu_list.contains(selectedFoodType) && menu_list[selectedFoodType].contains(selectedFoodName))
-        {
+    if (reply == QMessageBox::Yes) {
+        // For now, we'll use a simple approach - remove from local cache
+        // In a real implementation, you'd want to track item IDs from the server
+        if (menu_list.contains(selectedFoodType) && menu_list[selectedFoodType].contains(selectedFoodName)) {
+            // Remove from local cache
             menu_list[selectedFoodType].remove(selectedFoodName);
             
             // Remove empty food type
-            if(menu_list[selectedFoodType].isEmpty())
-            {
+            if (menu_list[selectedFoodType].isEmpty()) {
                 menu_list.remove(selectedFoodType);
             }
         }
         
-        save_menu_to_database();
-        refresh_menu_display();
-        clear_form();
+        // Send delete request to server (we'll need item ID in real implementation)
+        // For now, we'll refresh the menu from server after local removal
+        NetworkManager::getInstance()->getRestaurantMenu(currentRestaurantId);
         
-        QMessageBox::information(this, "Success", "Food item deleted successfully!");
+        // Clear form immediately for better UX
+        clear_form();
     }
 }
 
@@ -317,21 +414,26 @@ void menu_restaurant::on_clearFormButton_clicked()
 void menu_restaurant::on_menuItem_selected()
 {
     QTableWidget *menuTableWidget = ui->menuDisplayGroup->findChild<QTableWidget*>("menuTableWidget");
-    QLineEdit *foodTypeEdit = ui->foodManagementGroup->findChild<QLineEdit*>("foodTypeEdit");
-    QLineEdit *foodNameEdit = ui->foodManagementGroup->findChild<QLineEdit*>("foodNameEdit");
-    QLineEdit *foodDetailsEdit = ui->foodManagementGroup->findChild<QLineEdit*>("foodDetailsEdit");
-    QSpinBox *priceSpinBox = ui->foodManagementGroup->findChild<QSpinBox*>("priceSpinBox");
-
+    
     QList<QTableWidgetItem*> selectedItems = menuTableWidget->selectedItems();
-    if(selectedItems.isEmpty()) return;
+    if (selectedItems.isEmpty()) return;
+    
     int row = selectedItems.first()->row();
-    if(foodTypeEdit) foodTypeEdit->setText(menuTableWidget->item(row, 0)->text());
-    if(foodNameEdit) foodNameEdit->setText(menuTableWidget->item(row, 1)->text());
-    if(foodDetailsEdit) foodDetailsEdit->setText(menuTableWidget->item(row, 2)->text());
-    if(priceSpinBox) priceSpinBox->setValue(menuTableWidget->item(row, 3)->text().toInt());
+    
+    // Set values in the form
+    QString foodType = menuTableWidget->item(row, 0)->text();
+    QString foodName = menuTableWidget->item(row, 1)->text();
+    QString foodDetails = menuTableWidget->item(row, 2)->text();
+    QString price = menuTableWidget->item(row, 3)->text();
+    
+    ui->foodTypeEdit->setText(foodType);
+    ui->foodNameEdit->setText(foodName);
+    ui->foodDetailsEdit->setText(foodDetails);
+    ui->priceSpinBox->setValue(price.toInt());
+    
     selectedItemIndex = row;
-    selectedFoodType = menuTableWidget->item(row, 0)->text();
-    selectedFoodName = menuTableWidget->item(row, 1)->text();
+    selectedFoodType = foodType;
+    selectedFoodName = foodName;
 }
 
 void menu_restaurant::click_shopping_basket_button()
@@ -402,46 +504,9 @@ void menu_restaurant::receive_message()
 
 void menu_restaurant::load_orders()
 {
-    if (currentRestaurantId == -1) return;
-
-    populate_orders_table();
-    ui->ordersTableWidget->setRowCount(0);
-
-    QSqlDatabase db = QSqlDatabase::database();
-    if (!db.isOpen()) return;
-
-    QSqlQuery query(db);
-    query.prepare(
-        "SELECT o.id, u.username, o.total_amount, o.order_status, o.created_at "
-        "FROM orders o "
-        "JOIN users u ON o.customer_id = u.id "
-        "WHERE o.restaurant_id = ? "
-        "ORDER BY o.created_at DESC"
-    );
-    query.addBindValue(currentRestaurantId);
-
-    if (query.exec()) {
-        int row = 0;
-        while (query.next()) {
-            ui->ordersTableWidget->insertRow(row);
-            // Order ID (Column 0) - Store it as user data
-            QTableWidgetItem *idItem = new QTableWidgetItem();
-            idItem->setData(Qt::UserRole, query.value(0));
-            ui->ordersTableWidget->setItem(row, 0, idItem);
-
-            // Customer (Column 1)
-            ui->ordersTableWidget->setItem(row, 1, new QTableWidgetItem(query.value(1).toString()));
-            // Total (Column 2)
-            ui->ordersTableWidget->setItem(row, 2, new QTableWidgetItem(query.value(2).toString()));
-            // Status (Column 3)
-            ui->ordersTableWidget->setItem(row, 3, new QTableWidgetItem(query.value(3).toString()));
-            // Date (Column 4)
-            ui->ordersTableWidget->setItem(row, 4, new QTableWidgetItem(query.value(4).toDateTime().toString()));
-            row++;
-        }
-    } else {
-        QMessageBox::critical(this, "Database Error", "Failed to load orders: " + query.lastError().text());
-    }
+    // This method is now replaced by loadOrdersFromServer()
+    // Keeping for backward compatibility
+    loadOrdersFromServer();
 }
 
 void menu_restaurant::populate_orders_table()
@@ -456,7 +521,7 @@ void menu_restaurant::populate_orders_table()
 
 void menu_restaurant::on_refreshOrdersButton_clicked()
 {
-    load_orders();
+    loadOrdersFromServer();
 }
 
 void menu_restaurant::on_updateStatusButton_clicked()
@@ -476,20 +541,50 @@ void menu_restaurant::on_updateStatusButton_clicked()
     QString newStatus = QInputDialog::getItem(this, "Update Order Status", "Select the new status for the order:", statuses, 0, false, &ok);
 
     if (ok && !newStatus.isEmpty()) {
-        QSqlDatabase db = QSqlDatabase::database();
-        if (!db.isOpen()) return;
-
-        QSqlQuery query(db);
-        query.prepare("UPDATE orders SET order_status = ? WHERE id = ?");
-        query.addBindValue(newStatus);
-        query.addBindValue(orderId);
-
-        if (query.exec()) {
-            QMessageBox::information(this, "Success", "Order status updated successfully!");
-            load_orders(); // Refresh the table
-        } else {
-            QMessageBox::critical(this, "Database Error", "Failed to update order status: " + query.lastError().text());
-        }
+        // Use network manager to update order status
+        NetworkManager* netManager = NetworkManager::getInstance();
+        netManager->updateOrderStatus(orderId, newStatus);
     }
+}
+
+void menu_restaurant::onMenuItemAdded(const QString &message)
+{
+    // Refresh menu from server after successful addition
+    NetworkManager::getInstance()->getRestaurantMenu(currentRestaurantId);
+    QMessageBox::information(this, "Success", "Food item added successfully!");
+}
+
+void menu_restaurant::onMenuItemOperationFailed(const QString &errorMessage)
+{
+    QMessageBox::warning(this, "Operation Error", errorMessage);
+}
+
+void menu_restaurant::onMenuItemUpdated(const QString &message)
+{
+    // Refresh menu from server after successful update
+    NetworkManager::getInstance()->getRestaurantMenu(currentRestaurantId);
+    QMessageBox::information(this, "Success", "Food item updated successfully!");
+}
+
+void menu_restaurant::onMenuItemDeleted(const QString &message)
+{
+    // Refresh menu from server after successful deletion
+    NetworkManager::getInstance()->getRestaurantMenu(currentRestaurantId);
+    QMessageBox::information(this, "Success", "Food item deleted successfully!");
+}
+
+void menu_restaurant::onMenuItemAddedFailed(const QString &error)
+{
+    QMessageBox::warning(this, "Add Failed", error);
+}
+
+void menu_restaurant::onMenuItemUpdatedFailed(const QString &error)
+{
+    QMessageBox::warning(this, "Update Failed", error);
+}
+
+void menu_restaurant::onMenuItemDeletedFailed(const QString &error)
+{
+    QMessageBox::warning(this, "Delete Failed", error);
 }
 

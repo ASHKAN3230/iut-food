@@ -6,11 +6,12 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QVBoxLayout>
-#include<QLineEdit>
+#include <QLineEdit>
+#include <QJsonObject>
 #include "clicklabel.h"
-#include<string>
-#include<QTcpSocket>
-#include<QTcpServer>
+#include <string>
+#include <QTcpSocket>
+#include <QTcpServer>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -52,6 +53,11 @@ public slots:
     void on_login_button_clicked();
 
     void send_message();
+    
+    // Network manager slots
+    void onLoginSuccess(const QJsonObject &userInfo);
+    void onLoginFailed(const QString &error);
+    void onNetworkError(const QString &error);
 
 private:
     Ui::MainWindow *ui;

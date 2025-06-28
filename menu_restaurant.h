@@ -2,11 +2,12 @@
 #define MENU_RESTAURANT_H
 
 #include <QWidget>
-#include<QString>
-#include<QPair>
-#include<string>
-#include<QTcpSocket>
-#include<QTcpServer>
+#include <QString>
+#include <QPair>
+#include <QJsonArray>
+#include <string>
+#include <QTcpSocket>
+#include <QTcpServer>
 
 namespace Ui {
 class menu_restaurant;
@@ -74,6 +75,22 @@ public slots:
     void on_refreshOrdersButton_clicked();
 
     void on_updateStatusButton_clicked();
+    
+    // Network manager slots
+    void onMenuReceived(const QJsonArray &menu);
+    void onOrdersReceived(const QJsonArray &orders);
+    void onOrderCreated(const QString &message);
+    void onOrderStatusUpdated(const QString &message);
+    void onNetworkError(const QString &error);
+    
+    // Menu operation slots
+    void onMenuItemAdded(const QString &message);
+    void onMenuItemAddedFailed(const QString &error);
+    void onMenuItemUpdated(const QString &message);
+    void onMenuItemUpdatedFailed(const QString &error);
+    void onMenuItemDeleted(const QString &message);
+    void onMenuItemDeletedFailed(const QString &error);
+    void onMenuItemOperationFailed(const QString &error);
 
 private:
     Ui::menu_restaurant *ui;
@@ -82,6 +99,11 @@ private:
     int selectedItemIndex;
     QString currentRestaurantUsername;
     int currentRestaurantId;
+    
+    // Network manager methods
+    void getRestaurantInfo();
+    void loadMenuFromServer();
+    void loadOrdersFromServer();
 };
 
 #endif // MENU_RESTAURANT_H
