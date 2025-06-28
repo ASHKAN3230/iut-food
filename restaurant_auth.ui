@@ -271,11 +271,14 @@ font: 9pt &quot;Segoe UI&quot;;</string>
       </rect>
      </property>
      <property name="styleSheet">
-      <string notr="true">color: rgb(255, 255, 255);
-font: 700 10pt &quot;Segoe UI&quot;;
-background-color: rgba(0,128,0,200);
+      <string notr="true">background-color: rgba(0,0,0,0);
 border: none;
-border-radius: 5px;</string>
+color: rgb(255, 255, 255);
+font: 700 12pt 'Segoe UI';
+border-bottom: 1px solid rgba(255,0,0,200);
+border-top: 1px solid rgba(255,0,0,200);
+border-left: 1px solid rgba(255,0,0,200);
+border-right: 1px solid rgba(255,0,0,200);</string>
      </property>
      <property name="text">
       <string>Save Restaurant Info</string>
@@ -369,11 +372,14 @@ Please ensure your restaurant information and menu are properly set up.</string>
       </rect>
      </property>
      <property name="styleSheet">
-      <string notr="true">color: rgb(255, 255, 255);
-font: 700 10pt &quot;Segoe UI&quot;;
-background-color: rgba(0,128,0,200);
+      <string notr="true">background-color: rgba(0,0,0,0);
 border: none;
-border-radius: 5px;</string>
+color: rgb(255, 255, 255);
+font: 700 12pt 'Segoe UI';
+border-bottom: 1px solid rgba(255,0,0,200);
+border-top: 1px solid rgba(255,0,0,200);
+border-left: 1px solid rgba(255,0,0,200);
+border-right: 1px solid rgba(255,0,0,200);</string>
      </property>
      <property name="text">
       <string>Continue to Menu</string>
@@ -390,11 +396,14 @@ border-radius: 5px;</string>
       </rect>
      </property>
      <property name="styleSheet">
-      <string notr="true">color: rgb(255, 255, 255);
-font: 700 10pt &quot;Segoe UI&quot;;
-background-color: rgba(255,165,0,200);
+      <string notr="true">background-color: rgba(0,0,0,0);
 border: none;
-border-radius: 5px;</string>
+color: rgb(255, 255, 255);
+font: 700 12pt 'Segoe UI';
+border-bottom: 1px solid rgba(255,0,0,200);
+border-top: 1px solid rgba(255,0,0,200);
+border-left: 1px solid rgba(255,0,0,200);
+border-right: 1px solid rgba(255,0,0,200);</string>
      </property>
      <property name="text">
       <string>Setup Menu Now</string>
@@ -412,14 +421,17 @@ border-radius: 5px;</string>
      </rect>
     </property>
     <property name="styleSheet">
-     <string notr="true">color: rgb(255, 255, 255);
-font: 700 10pt &quot;Segoe UI&quot;;
-background-color: rgba(128,128,128,200);
+     <string notr="true">background-color: rgba(0,0,0,0);
 border: none;
-border-radius: 5px;</string>
+color: rgb(255, 255, 255);
+font: 700 12pt 'Segoe UI';
+border-bottom: 1px solid rgba(255,0,0,200);
+border-top: 1px solid rgba(255,0,0,200);
+border-left: 1px solid rgba(255,0,0,200);
+border-right: 1px solid rgba(255,0,0,200);</string>
     </property>
     <property name="text">
-     <string>Back to Login</string>
+     <string>Back to Dashboard</string>
     </property>
    </widget>
    

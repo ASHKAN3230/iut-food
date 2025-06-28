@@ -345,9 +345,9 @@ void restaurant_auth::create_initial_menu()
 
 void restaurant_auth::on_back_button_clicked()
 {
-    MainWindow *mw = new MainWindow();
-    mw->setAttribute(Qt::WA_DeleteOnClose);
-    mw->show();
+    menu_restaurant *mr = new menu_restaurant(currentRestaurantUsername);
+    mr->setAttribute(Qt::WA_DeleteOnClose);
+    mr->showMaximized();
     this->close();
 }
 
