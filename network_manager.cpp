@@ -78,7 +78,7 @@ void NetworkManager::addMenuItem(int restaurantId, const QString &foodType, cons
                                 const QString &foodDetails, int price)
 {
     QJsonObject data;
-    data["restaurantId"] = restaurantId;
+    data["restaurantId"] = QString::number(restaurantId);
     data["foodType"] = foodType;
     data["foodName"] = foodName;
     data["foodDetails"] = foodDetails;
