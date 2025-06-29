@@ -217,7 +217,17 @@ void NetworkManager::handleResponse(QNetworkReply *reply, const QString &operati
         }
         return;
     }
-    
+
+    // Handle direct array response for menu endpoints
+    if (doc.isArray()) {
+        QJsonObject obj;
+        obj["menu"] = doc.array();
+        if (operation.startsWith("/api/restaurants/") && operation.endsWith("/menu")) {
+            handleMenuResponse(obj);
+            return;
+        }
+    }
+
     QJsonObject response = doc.object();
     int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
     
