@@ -7,9 +7,6 @@
 #include "restaurant_auth.h"
 #include "network_manager.h"
 #include <QMessageBox>
-#include <QSqlDatabase>
-#include <QSqlQuery>
-#include <QSqlError>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -145,16 +142,15 @@ void MainWindow::onLoginSuccess(const QJsonObject &userInfo)
         person->showMaximized();
         this->close();
     } else if (userType == "manager") {
-        menu_restaurant *mr = new menu_restaurant(username);
+        menu_restaurant *mr = new menu_restaurant(username, -1);
         mr->setAttribute(Qt::WA_DeleteOnClose);
         mr->showMaximized();
         this->close();
     } else if (userType == "restaurant") {
         int restaurantId = userInfo["restaurantId"].toInt();
-        
         if (restaurantId > 0) {
             // Restaurant has setup, go to menu management
-            menu_restaurant *mr = new menu_restaurant(username);
+            menu_restaurant *mr = new menu_restaurant(username, restaurantId);
             mr->setAttribute(Qt::WA_DeleteOnClose);
             mr->showMaximized();
             this->close();

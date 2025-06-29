@@ -5,9 +5,6 @@
 #include <QString>
 #include <QFile>
 #include <QMessageBox>
-#include <QSqlDatabase>
-#include <QSqlQuery>
-#include <QSqlError>
 
 sign_in::sign_in(QWidget *parent)
     : QWidget(parent)

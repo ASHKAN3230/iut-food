@@ -138,6 +138,19 @@ void NetworkManager::checkServerHealth()
     sendRequest("/api/health", "GET");
 }
 
+void NetworkManager::setUserRestaurant(int userId, int restaurantId)
+{
+    QJsonObject data;
+    data["userId"] = userId;
+    data["restaurantId"] = restaurantId;
+    sendRequest("/api/users/set-restaurant", "POST", data);
+}
+
+void NetworkManager::createRestaurant(const QJsonObject &data)
+{
+    sendRequest("/api/restaurants/create", "POST", data);
+}
+
 void NetworkManager::sendRequest(const QString &endpoint, const QString &method, const QJsonObject &data)
 {
     QNetworkRequest request = createRequest(endpoint);
@@ -183,6 +196,10 @@ void NetworkManager::handleResponse(QNetworkReply *reply, const QString &operati
         QString errorMsg = QString("Network error: %1").arg(reply->errorString());
         qWarning() << errorMsg;
         emit networkError(errorMsg);
+        // Handle restaurant creation failure
+        if (operation == "/api/restaurants/create") {
+            emit restaurantCreated(false);
+        }
         return;
     }
     
@@ -194,6 +211,10 @@ void NetworkManager::handleResponse(QNetworkReply *reply, const QString &operati
         QString errorMsg = QString("JSON parse error: %1").arg(parseError.errorString());
         qWarning() << errorMsg;
         emit networkError(errorMsg);
+        // Handle restaurant creation failure
+        if (operation == "/api/restaurants/create") {
+            emit restaurantCreated(false);
+        }
         return;
     }
     
@@ -225,6 +246,14 @@ void NetworkManager::handleResponse(QNetworkReply *reply, const QString &operati
         handleOrderStatusResponse(response);
     } else if (operation == "/api/health") {
         handleHealthResponse(response);
+    }
+    // Handle restaurant creation response
+    if (operation == "/api/restaurants/create") {
+        if (response.contains("error")) {
+            emit restaurantCreated(false);
+        } else {
+            emit restaurantCreated(true);
+        }
     }
 }
 
@@ -348,4 +377,4 @@ void NetworkManager::handleHealthResponse(const QJsonObject &response)
     } else {
         emit serverHealthOk(response);
     }
-} 
+}

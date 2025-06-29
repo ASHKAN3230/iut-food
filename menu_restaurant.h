@@ -18,7 +18,7 @@ class menu_restaurant : public QWidget
     Q_OBJECT
 
 public:
-    explicit menu_restaurant(const QString &username, QWidget *parent = nullptr);
+    explicit menu_restaurant(const QString &username, int restaurantId = -1, QWidget *parent = nullptr);
     ~menu_restaurant();
 
     void click_back_button();

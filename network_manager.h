@@ -45,6 +45,10 @@ public:
     // Health check
     void checkServerHealth();
 
+    void setUserRestaurant(int userId, int restaurantId);
+
+    void createRestaurant(const QJsonObject &data);
+
 signals:
     // Authentication signals
     void loginSuccess(const QJsonObject &userInfo);
@@ -75,6 +79,7 @@ signals:
     void serverHealthOk(const QJsonObject &status);
     void serverHealthFailed(const QString &error);
     void networkError(const QString &error);
+    void restaurantCreated(bool success);
 
 private:
     NetworkManager(QObject *parent = nullptr);
@@ -103,4 +108,4 @@ private:
     void handleHealthResponse(const QJsonObject &response);
 };
 
-#endif // NETWORK_MANAGER_H 
+#endif // NETWORK_MANAGER_H

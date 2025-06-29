@@ -21,11 +21,11 @@
 #include <QJsonArray>
 #include <QJsonObject>
 
-menu_restaurant::menu_restaurant(const QString &username, QWidget *parent)
+menu_restaurant::menu_restaurant(const QString &username, int restaurantId, QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::menu_restaurant)
     , selectedItemIndex(-1)
-    , currentRestaurantId(-1)
+    , currentRestaurantId(restaurantId)
 {
     ui->setupUi(this);
     currentRestaurantUsername = username;
@@ -72,9 +72,10 @@ menu_restaurant::menu_restaurant(const QString &username, QWidget *parent)
         receive_message();
     }
 
-    // Get restaurant ID from network manager or local database as fallback
-    getRestaurantInfo();
-    
+    // Only call getRestaurantInfo if restaurantId is not provided
+    if (currentRestaurantId <= 0) {
+        getRestaurantInfo();
+    }
     // Load menu and orders using network manager
     if (currentRestaurantId > 0) {
         loadMenuFromServer();
@@ -91,22 +92,7 @@ int menu_restaurant::index = 0;
 
 void menu_restaurant::getRestaurantInfo()
 {
-    // Try to get restaurant info from network manager first
-    // For now, we'll use local database as fallback
-    QSqlDatabase db = QSqlDatabase::database();
-    if (!db.isOpen()) {
-        db = QSqlDatabase::addDatabase("QSQLITE");
-        db.setDatabaseName("iut_food.db");
-        db.open();
-    }
-    QSqlQuery query;
-    query.prepare("SELECT restaurant_id FROM users WHERE username = ?");
-    query.addBindValue(currentRestaurantUsername);
-    if (query.exec() && query.next()) {
-        currentRestaurantId = query.value(0).toInt();
-    } else {
-        QMessageBox::critical(this, "Error", "Could not retrieve restaurant ID for user.");
-    }
+    currentRestaurantId = -1;
 }
 
 void menu_restaurant::loadMenuFromServer()

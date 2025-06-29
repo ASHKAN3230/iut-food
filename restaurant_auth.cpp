@@ -2,6 +2,7 @@
 #include "ui_restaurant_auth.h"
 #include "mainwindow.h"
 #include "menu_restaurant.h"
+#include "network_manager.h"
 #include <QFile>
 #include <QTextStream>
 #include <QMessageBox>
@@ -30,6 +31,9 @@ restaurant_auth::restaurant_auth(const QString &username, QWidget *parent)
     connect(ui->back_button, &QPushButton::clicked, this, &restaurant_auth::on_back_button_clicked);
     connect(ui->save_info_button, &QPushButton::clicked, this, &restaurant_auth::on_save_info_button_clicked);
 
+    // Connect to NetworkManager's restaurantsReceived signal
+    connect(NetworkManager::getInstance(), &NetworkManager::restaurantsReceived, this, &restaurant_auth::onRestaurantsReceived);
+
     socket.connectToHost("127.0.0.1", 6006);
     if(socket.waitForConnected(1000))
     {
@@ -48,75 +52,34 @@ restaurant_auth::~restaurant_auth()
 
 void restaurant_auth::check_restaurant_info_status()
 {
-    // Check if restaurant information exists in database
-    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
-    db.setDatabaseName("iut_food.db");
-    
-    if (!db.open()) {
-        QMessageBox::critical(this, "Database Error", "Could not open database: " + db.lastError().text());
-        return;
-    }
-    
-    // --- Check and Alter restaurants table ---
-    QSqlQuery pragmaRestaurants(db);
-    pragmaRestaurants.exec("PRAGMA table_info(restaurants)");
-    bool descriptionExists = false;
-    while (pragmaRestaurants.next()) {
-        if (pragmaRestaurants.value("name").toString() == "description") {
-            descriptionExists = true;
+    // Fetch restaurant info from server instead of local DB
+    NetworkManager::getInstance()->getRestaurants();
+}
+
+// Add a slot to handle the server response
+void restaurant_auth::onRestaurantsReceived(const QJsonArray &restaurants)
+{
+    infoExists = false;
+    currentRestaurantId = -1;
+    for (const QJsonValue &val : restaurants) {
+        QJsonObject obj = val.toObject();
+        if (obj["username"].toString() == currentRestaurantUsername) {
+            infoExists = true;
+            currentRestaurantId = obj["id"].toInt();
+            ui->restaurantNameEdit->setText(obj["name"].toString());
+            ui->restaurantTypeCombo->setCurrentText(obj["type"].toString());
+            ui->restaurantAddressEdit->setText(obj["location"].toString());
+            ui->restaurantDescEdit->setPlainText(obj["description"].toString());
+            // Disable editing if info exists
+            ui->restaurantNameEdit->setEnabled(false);
+            ui->restaurantTypeCombo->setEnabled(false);
+            ui->restaurantAddressEdit->setEnabled(false);
+            ui->restaurantDescEdit->setEnabled(false);
+            ui->save_info_button->setEnabled(false);
             break;
         }
     }
-
-    if (!descriptionExists) {
-        QSqlQuery alterRestaurants(db);
-        alterRestaurants.exec("ALTER TABLE restaurants ADD COLUMN description TEXT");
-    }
-
-    // --- Check and Alter users table ---
-    QSqlQuery pragmaUsers(db);
-    pragmaUsers.exec("PRAGMA table_info(users)");
-    bool restaurantIdExists = false;
-    while (pragmaUsers.next()) {
-        if (pragmaUsers.value("name").toString() == "restaurant_id") {
-            restaurantIdExists = true;
-            break;
-        }
-    }
-    
-    if (!restaurantIdExists) {
-        QSqlQuery alterUsers(db);
-        alterUsers.exec("ALTER TABLE users ADD COLUMN restaurant_id INTEGER");
-    }
-    
-    // Check if user exists and has restaurant info
-    QSqlQuery query(db);
-    query.prepare("SELECT r.id, r.name, r.type, r.location, r.description, r.min_price, r.max_price "
-                  "FROM restaurants r "
-                  "JOIN users u ON r.id = u.restaurant_id "
-                  "WHERE u.username = ?");
-    query.addBindValue(currentRestaurantUsername);
-    
-    if (query.exec() && query.next()) {
-        infoExists = true;
-        currentRestaurantId = query.value(0).toInt();
-        
-        // Populate form fields with existing data
-        ui->restaurantNameEdit->setText(query.value(1).toString());
-        ui->restaurantTypeCombo->setCurrentText(query.value(2).toString());
-        ui->restaurantAddressEdit->setText(query.value(3).toString());
-        ui->restaurantDescEdit->setPlainText(query.value(4).toString());
-        
-        // Disable editing if info exists
-        ui->restaurantNameEdit->setEnabled(false);
-        ui->restaurantTypeCombo->setEnabled(false);
-        ui->restaurantAddressEdit->setEnabled(false);
-        ui->restaurantDescEdit->setEnabled(false);
-        ui->save_info_button->setEnabled(false);
-    } else {
-        infoExists = false;
-        currentRestaurantId = -1;
-        
+    if (!infoExists) {
         // Enable editing for new restaurants
         ui->restaurantNameEdit->setEnabled(true);
         ui->restaurantTypeCombo->setEnabled(true);
@@ -124,8 +87,7 @@ void restaurant_auth::check_restaurant_info_status()
         ui->restaurantDescEdit->setEnabled(true);
         ui->save_info_button->setEnabled(true);
     }
-    
-    db.close();
+    update_status_display();
 }
 
 void restaurant_auth::check_restaurant_menu_status()
@@ -182,96 +144,22 @@ void restaurant_auth::save_restaurant_info()
         QMessageBox::warning(this, "Input Error", "Please fill in restaurant name and address!");
         return;
     }
-    
-    // Open database connection directly for this operation
-    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
-    db.setDatabaseName("iut_food.db");
-    
-    if (!db.open()) {
-        QMessageBox::critical(this, "Database Error", "Could not open database: " + db.lastError().text());
-        return;
-    }
-    
-    // --- Check and Alter restaurants table ---
-    QSqlQuery pragmaRestaurants(db);
-    pragmaRestaurants.exec("PRAGMA table_info(restaurants)");
-    bool descriptionExists = false;
-    while (pragmaRestaurants.next()) {
-        if (pragmaRestaurants.value("name").toString() == "description") {
-            descriptionExists = true;
-            break;
-        }
-    }
 
-    if (!descriptionExists) {
-        QSqlQuery alterRestaurants(db);
-        if (!alterRestaurants.exec("ALTER TABLE restaurants ADD COLUMN description TEXT")) {
-            // This might fail if the table does not exist, which is fine, we create it next.
-        }
-    }
-
-    // --- Check and Alter users table ---
-    QSqlQuery pragmaUsers(db);
-    pragmaUsers.exec("PRAGMA table_info(users)");
-    bool restaurantIdExists = false;
-    while (pragmaUsers.next()) {
-        if (pragmaUsers.value("name").toString() == "restaurant_id") {
-            restaurantIdExists = true;
-            break;
-        }
-    }
-    
-    if (!restaurantIdExists) {
-        QSqlQuery alterUsers(db);
-        if (!alterUsers.exec("ALTER TABLE users ADD COLUMN restaurant_id INTEGER")) {
-            // This might fail if the table does not exist, which is fine.
-        }
-    }
-    
-    // For now, use default price range - you can add price range fields later
+    // Prepare data for server
     int minPrice = 10000;
     int maxPrice = 100000;
-    
-    // Insert restaurant information
-    QSqlQuery insertQuery(db);
-    insertQuery.prepare("INSERT INTO restaurants (name, type, location, description, min_price, max_price) "
-                       "VALUES (?, ?, ?, ?, ?, ?)");
-    insertQuery.addBindValue(name);
-    insertQuery.addBindValue(type);
-    insertQuery.addBindValue(address);
-    insertQuery.addBindValue(description);
-    insertQuery.addBindValue(minPrice);
-    insertQuery.addBindValue(maxPrice);
-    
-    if (insertQuery.exec()) {
-        // Get the restaurant ID that was just created
-        QSqlQuery idQuery(db);
-        idQuery.exec("SELECT last_insert_rowid()");
-        if (idQuery.next()) {
-            currentRestaurantId = idQuery.value(0).toInt();
-            
-            // Update user record to link with restaurant
-            QSqlQuery updateQuery(db);
-            updateQuery.prepare("UPDATE users SET restaurant_id = ? WHERE username = ?");
-            updateQuery.addBindValue(currentRestaurantId);
-            updateQuery.addBindValue(currentRestaurantUsername);
-            
-            if (updateQuery.exec()) {
-                infoExists = true;
-                update_status_display();
-                
-                QMessageBox::information(this, "Success", "Restaurant information saved successfully!");
-            } else {
-                QMessageBox::warning(this, "Warning", "Restaurant saved but user link failed: " + updateQuery.lastError().text());
-            }
-        } else {
-            QMessageBox::warning(this, "Warning", "Restaurant saved but could not get ID: " + idQuery.lastError().text());
-        }
-    } else {
-        QMessageBox::critical(this, "Error", "Failed to save restaurant information: " + insertQuery.lastError().text());
-    }
-    
-    db.close();
+    QJsonObject data;
+    data["name"] = name;
+    data["type"] = type;
+    data["location"] = address;
+    data["description"] = description;
+    data["minPrice"] = minPrice;
+    data["maxPrice"] = maxPrice;
+    data["username"] = currentRestaurantUsername;
+
+    // Send to server using NetworkManager
+    NetworkManager::getInstance()->createRestaurant(data);
+    // UI will update in onRestaurantCreated
 }
 
 void restaurant_auth::update_status_display()
@@ -415,4 +303,21 @@ void restaurant_auth::send_message()
             }
         }
     }
-} 
+}
+
+void restaurant_auth::onRestaurantCreated(bool success)
+{
+    if (success) {
+        QMessageBox::information(this, "Success", "Restaurant information saved on server!");
+        infoExists = true;
+        check_restaurant_info_status();
+        update_status_display();
+        ui->restaurantNameEdit->setEnabled(false);
+        ui->restaurantTypeCombo->setEnabled(false);
+        ui->restaurantAddressEdit->setEnabled(false);
+        ui->restaurantDescEdit->setEnabled(false);
+        ui->save_info_button->setEnabled(false);
+    } else {
+        QMessageBox::critical(this, "Error", "Failed to save restaurant information on server.");
+    }
+}

@@ -38,7 +38,9 @@ public slots:
     void on_continue_button_clicked();
     void on_setup_menu_button_clicked();
     void on_save_info_button_clicked();
+    void onRestaurantCreated(bool success);
     void send_message();
+    void onRestaurantsReceived(const QJsonArray &restaurants);
 
 private:
     Ui::restaurant_auth *ui;
@@ -51,4 +53,4 @@ private:
     int currentRestaurantId;
 };
 
-#endif // RESTAURANT_AUTH_H 
+#endif // RESTAURANT_AUTH_H
