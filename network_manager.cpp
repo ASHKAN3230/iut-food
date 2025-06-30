@@ -119,9 +119,8 @@ void NetworkManager::createOrder(int customerId, int restaurantId, const QJsonAr
 
 void NetworkManager::getOrders(const QString &userId, const QString &userType)
 {
-    // For now, we'll use a simple GET request
-    // In a real implementation, you might want to pass user info in headers or query params
-    sendRequest("/api/orders", "GET");
+    QString endpoint = QString("/api/orders?userId=%1&userType=%2").arg(userId).arg(userType);
+    sendRequest(endpoint, "GET");
 }
 
 void NetworkManager::updateOrderStatus(int orderId, const QString &status)
@@ -250,8 +249,8 @@ void NetworkManager::handleResponse(QNetworkReply *reply, const QString &operati
         handleMenuItemDeletedResponse(response);
     } else if (operation == "/api/orders" && reply->property("method").toString() == "POST") {
         handleOrderResponse(response);
-    } else if (operation == "/api/orders" && reply->property("method").toString() == "GET") {
-        handleOrdersResponse(response);
+    } else if (operation.startsWith("/api/orders") && reply->property("method").toString() == "GET") {
+        handleOrdersResponse(doc);
     } else if (operation.startsWith("/api/orders/") && reply->property("method").toString() == "PUT") {
         handleOrderStatusResponse(response);
     } else if (operation == "/api/health") {
@@ -355,19 +354,17 @@ void NetworkManager::handleOrderResponse(const QJsonObject &response)
     }
 }
 
-void NetworkManager::handleOrdersResponse(const QJsonObject &response)
+void NetworkManager::handleOrdersResponse(const QJsonDocument &doc)
 {
     QJsonArray orders;
-    if (response.contains("orders")) {
-        orders = response["orders"].toArray();
-    } else {
-        // If response is directly an array
-        QJsonDocument doc = QJsonDocument::fromJson(response.toVariantMap().value("data").toByteArray());
-        if (doc.isArray()) {
-            orders = doc.array();
+    if (doc.isArray()) {
+        orders = doc.array();
+    } else if (doc.isObject()) {
+        QJsonObject response = doc.object();
+        if (response.contains("orders")) {
+            orders = response["orders"].toArray();
         }
     }
-    
     emit ordersReceived(orders);
 }
 

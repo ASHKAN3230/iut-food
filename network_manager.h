@@ -103,7 +103,7 @@ private:
     void handleMenuItemUpdatedResponse(const QJsonObject &response);
     void handleMenuItemDeletedResponse(const QJsonObject &response);
     void handleOrderResponse(const QJsonObject &response);
-    void handleOrdersResponse(const QJsonObject &response);
+    void handleOrdersResponse(const QJsonDocument &doc);
     void handleOrderStatusResponse(const QJsonObject &response);
     void handleHealthResponse(const QJsonObject &response);
 };

@@ -20,6 +20,7 @@
 #include <QDateTime>
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QDebug>
 
 menu_restaurant::menu_restaurant(const QString &username, int restaurantId, QWidget *parent)
     : QWidget(parent)
@@ -133,25 +134,24 @@ void menu_restaurant::onOrdersReceived(const QJsonArray &orders)
 {
     populate_orders_table();
     ui->ordersTableWidget->setRowCount(0);
-    
+    int rowCount = 0;
     for (const QJsonValue &orderValue : orders) {
         QJsonObject order = orderValue.toObject();
         int row = ui->ordersTableWidget->rowCount();
         ui->ordersTableWidget->insertRow(row);
-        
         // Order ID (Column 0) - Store it as user data
         QTableWidgetItem *idItem = new QTableWidgetItem();
         idItem->setData(Qt::UserRole, order["id"].toInt());
         ui->ordersTableWidget->setItem(row, 0, idItem);
-        
         // Customer (Column 1)
         ui->ordersTableWidget->setItem(row, 1, new QTableWidgetItem(order["customerName"].toString()));
         // Total (Column 2)
-        ui->ordersTableWidget->setItem(row, 2, new QTableWidgetItem(order["totalAmount"].toString()));
+        ui->ordersTableWidget->setItem(row, 2, new QTableWidgetItem(QString::number(order["totalAmount"].toInt())));
         // Status (Column 3)
         ui->ordersTableWidget->setItem(row, 3, new QTableWidgetItem(order["status"].toString()));
         // Date (Column 4)
         ui->ordersTableWidget->setItem(row, 4, new QTableWidgetItem(order["createdAt"].toString()));
+        rowCount++;
     }
 }
 
