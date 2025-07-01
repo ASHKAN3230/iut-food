@@ -1,4 +1,0 @@
-true
-5
-the restaurant is good
-
