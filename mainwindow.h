@@ -8,7 +8,6 @@
 #include <QVBoxLayout>
 #include <QLineEdit>
 #include <QJsonObject>
-#include "clicklabel.h"
 #include <string>
 #include <QTcpSocket>
 #include <QTcpServer>
@@ -61,10 +60,6 @@ public slots:
 
 private:
     Ui::MainWindow *ui;
-
-    clicklabel *signin_label;
-
-    clicklabel *forgot_password_label;
 
 };
 #endif // MAINWINDOW_H

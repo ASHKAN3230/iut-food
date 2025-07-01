@@ -29,6 +29,7 @@ menu_restaurant::menu_restaurant(const QString &username, int restaurantId, QWid
     , currentRestaurantId(restaurantId)
 {
     ui->setupUi(this);
+    setFixedSize(700, 600);
     currentRestaurantUsername = username;
 
     // Connect network manager signals
@@ -47,30 +48,20 @@ menu_restaurant::menu_restaurant(const QString &username, int restaurantId, QWid
     connect(netManager, &NetworkManager::menuItemDeleted, this, &menu_restaurant::onMenuItemDeleted);
     connect(netManager, &NetworkManager::menuItemDeletedFailed, this, &menu_restaurant::onMenuItemDeletedFailed);
 
-    connect(this, &menu_restaurant::click_shopping_basket_button, this, &menu_restaurant::send_message);
-    connect(this, &menu_restaurant::receive_message, this, &menu_restaurant::on_shopping_basket_button_clicked);
-    QPushButton *addFoodButton = ui->foodManagementGroup->findChild<QPushButton*>("addFoodButton");
-    QPushButton *editFoodButton = ui->foodManagementGroup->findChild<QPushButton*>("editFoodButton");
-    QPushButton *deleteFoodButton = ui->foodManagementGroup->findChild<QPushButton*>("deleteFoodButton");
-    QPushButton *clearFormButton = ui->foodManagementGroup->findChild<QPushButton*>("clearFormButton");
-    QTableWidget *menuTableWidget = ui->menuDisplayGroup->findChild<QTableWidget*>("menuTableWidget");
-
-    connect(addFoodButton, &QPushButton::clicked, this, &menu_restaurant::on_addFoodButton_clicked);
-    connect(editFoodButton, &QPushButton::clicked, this, &menu_restaurant::on_editFoodButton_clicked);
-    connect(deleteFoodButton, &QPushButton::clicked, this, &menu_restaurant::on_deleteFoodButton_clicked);
-    connect(clearFormButton, &QPushButton::clicked, this, &menu_restaurant::on_clearFormButton_clicked);
-    connect(menuTableWidget, &QTableWidget::itemClicked, this, &menu_restaurant::on_menuItem_selected);
-    connect(ui->profile_button, &QPushButton::clicked, this, &menu_restaurant::on_profile_button_clicked);
-    connect(ui->logout_button, &QPushButton::clicked, this, &menu_restaurant::on_logout_button_clicked);
-    QPushButton *refreshOrdersButton = ui->orderManagementGroup->findChild<QPushButton*>("refreshOrdersButton");
-    QPushButton *updateStatusButton = ui->orderManagementGroup->findChild<QPushButton*>("updateStatusButton");
-    connect(refreshOrdersButton, &QPushButton::clicked, this, &menu_restaurant::on_refreshOrdersButton_clicked);
-    connect(updateStatusButton, &QPushButton::clicked, this, &menu_restaurant::on_updateStatusButton_clicked);
+    connect(ui->addFoodButton, &QPushButton::clicked, this, &menu_restaurant::on_addFoodButton_clicked);
+    connect(ui->editFoodButton, &QPushButton::clicked, this, &menu_restaurant::on_editFoodButton_clicked);
+    connect(ui->deleteFoodButton, &QPushButton::clicked, this, &menu_restaurant::on_deleteFoodButton_clicked);
+    connect(ui->clearFormButton, &QPushButton::clicked, this, &menu_restaurant::on_clearFormButton_clicked);
+    connect(ui->menuTableWidget, &QTableWidget::itemClicked, this, &menu_restaurant::on_menuItem_selected);
+    connect(ui->refreshOrdersButton, &QPushButton::clicked, this, &menu_restaurant::on_refreshOrdersButton_clicked);
+    connect(ui->updateStatusButton, &QPushButton::clicked, this, &menu_restaurant::on_updateStatusButton_clicked);
+    // Profile tab logic
+    connect(ui->saveProfileButton, &QPushButton::clicked, this, &menu_restaurant::on_saveProfileButton_clicked);
 
     socket.connectToHost("127.0.0.1",6006);
     if(socket.waitForConnected(1000))
     {
-        receive_message();
+        // receive_message();
     }
 
     // Only call getRestaurantInfo if restaurantId is not provided
@@ -227,7 +218,7 @@ void menu_restaurant::save_menu_to_database()
 
 void menu_restaurant::refresh_menu_display()
 {
-    QTableWidget *menuTableWidget = ui->menuDisplayGroup->findChild<QTableWidget*>("menuTableWidget");
+    QTableWidget *menuTableWidget = ui->menuTableWidget;
     menuTableWidget->clear();
     menuTableWidget->setRowCount(0);
     menuTableWidget->setColumnCount(4);
@@ -399,7 +390,7 @@ void menu_restaurant::on_clearFormButton_clicked()
 
 void menu_restaurant::on_menuItem_selected()
 {
-    QTableWidget *menuTableWidget = ui->menuDisplayGroup->findChild<QTableWidget*>("menuTableWidget");
+    QTableWidget *menuTableWidget = ui->menuTableWidget;
     
     QList<QTableWidgetItem*> selectedItems = menuTableWidget->selectedItems();
     if (selectedItems.isEmpty()) return;
@@ -420,89 +411,6 @@ void menu_restaurant::on_menuItem_selected()
     selectedItemIndex = row;
     selectedFoodType = foodType;
     selectedFoodName = foodName;
-}
-
-void menu_restaurant::click_shopping_basket_button()
-{
-    message = "shop";
-    emit click_server();
-}
-
-void menu_restaurant::on_shopping_basket_button_clicked()
-{
-    shopping_basket *sb = new shopping_basket(currentRestaurantUsername);
-    sb->setAttribute(Qt::WA_DeleteOnClose);
-    sb->showMaximized();
-    this->close();
-}
-
-void menu_restaurant::on_profile_button_clicked()
-{
-    restaurant_auth *ra = new restaurant_auth(currentRestaurantUsername);
-    ra->setAttribute(Qt::WA_DeleteOnClose);
-    ra->showMaximized();
-    this->close();
-}
-
-void menu_restaurant::on_logout_button_clicked()
-{
-    MainWindow *mw = new MainWindow();
-    mw->setAttribute(Qt::WA_DeleteOnClose);
-    mw->show();
-    this->close();
-}
-
-void menu_restaurant::send_message()
-{
-    if(socket.state() == QTcpSocket::ConnectedState)
-    {
-        QByteArray byte(this->message.c_str(),this->message.length());
-        if(socket.write(byte) > 0)
-        {
-            if(!socket.waitForBytesWritten(1000))
-            {
-                QMessageBox::information(this,"not success","message not send!!!");
-            }
-        }
-    }
-}
-
-void menu_restaurant::receive_message()
-{
-    if(socket.state() == QTcpSocket::ConnectedState)
-    {
-        if(socket.waitForReadyRead(-1))
-        {
-            QByteArray byte = socket.readAll();
-            this->message = std::string(byte.constData(),byte.length());
-            if(message == "start back")
-            {
-                message = "";
-            }
-            else if(message == "start shop")
-            {
-                message = "";
-                emit click_shop();
-            }
-        }
-    }
-}
-
-void menu_restaurant::load_orders()
-{
-    // This method is now replaced by loadOrdersFromServer()
-    // Keeping for backward compatibility
-    loadOrdersFromServer();
-}
-
-void menu_restaurant::populate_orders_table()
-{
-    ui->ordersTableWidget->setColumnCount(5);
-    ui->ordersTableWidget->setHorizontalHeaderLabels({"ID", "Customer", "Total Price", "Status", "Date"});
-    ui->ordersTableWidget->setColumnHidden(0, true); // Hide the ID column
-    ui->ordersTableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    ui->ordersTableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
-    ui->ordersTableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
 }
 
 void menu_restaurant::on_refreshOrdersButton_clicked()
@@ -573,4 +481,27 @@ void menu_restaurant::onMenuItemDeletedFailed(const QString &error)
 {
     QMessageBox::warning(this, "Delete Failed", error);
 }
+
+void menu_restaurant::on_saveProfileButton_clicked()
+{
+    QString name = ui->restaurantNameEdit->text().trimmed();
+    QString type = ui->restaurantTypeEdit->text().trimmed();
+    QString address = ui->restaurantAddressEdit->text().trimmed();
+    QString desc = ui->restaurantDescEdit->text().trimmed();
+    // TODO: Save profile info to server or database
+    QMessageBox::information(this, "Profile Saved", "Profile information has been saved.");
+}
+
+void menu_restaurant::populate_orders_table()
+{
+    if (!ui || !ui->ordersTableWidget) return;
+    ui->ordersTableWidget->setColumnCount(5);
+    ui->ordersTableWidget->setHorizontalHeaderLabels({"ID", "Customer", "Total Price", "Status", "Date"});
+    ui->ordersTableWidget->setColumnHidden(0, true); // Hide the ID column
+    ui->ordersTableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    ui->ordersTableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
+    ui->ordersTableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
+}
+
+void menu_restaurant::send_message() {}
 

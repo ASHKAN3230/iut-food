@@ -13,50 +13,28 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-
+    setFixedSize(400, 500);
     // Connect network manager signals
     NetworkManager* netManager = NetworkManager::getInstance();
     connect(netManager, &NetworkManager::loginSuccess, this, &MainWindow::onLoginSuccess);
     connect(netManager, &NetworkManager::loginFailed, this, &MainWindow::onLoginFailed);
     connect(netManager, &NetworkManager::networkError, this, &MainWindow::onNetworkError);
-
     // Check server health on startup
     netManager->checkServerHealth();
-
-    // Replace the existing QLabel widgets with clicklabel widgets
-    // Store the original geometry and style
-    QRect signinGeometry = ui->signin_label->geometry();
-    QString signinStyle = ui->signin_label->styleSheet();
-    QString signinText = ui->signin_label->text();
-    
-    QRect forgotGeometry = ui->forgot_password_label->geometry();
-    QString forgotStyle = ui->forgot_password_label->styleSheet();
-    QString forgotText = ui->forgot_password_label->text();
-    
-    // Get the parent widget of the original labels
-    QWidget* parentWidget = ui->signin_label->parentWidget();
-    
-    // Create clicklabel widgets
-    clicklabel *signin_label = new clicklabel(parentWidget);
-    signin_label->setText(signinText);
-    signin_label->setGeometry(signinGeometry);
-    signin_label->setStyleSheet(signinStyle);
-    
-    clicklabel *forgot_password_label = new clicklabel(parentWidget);
-    forgot_password_label->setText(forgotText);
-    forgot_password_label->setGeometry(forgotGeometry);
-    forgot_password_label->setStyleSheet(forgotStyle);
-    
-    // Hide the original QLabel widgets
-    ui->signin_label->hide();
-    ui->forgot_password_label->hide();
-
-    // Connect the clicklabel signals
-    QObject::connect(signin_label, &clicklabel::clicked, this, &MainWindow::open_signin_window);
-    QObject::connect(forgot_password_label, &clicklabel::clicked, this, &MainWindow::open_forgot_window);
-
+    // Connect the clickable labels for sign up and forgot password
+    connect(ui->signin_label, &QLabel::linkActivated, this, &MainWindow::open_signin_window);
+    connect(ui->forgot_password_label, &QLabel::linkActivated, this, &MainWindow::open_forgot_window);
+    // Make labels clickable (simulate link)
+    ui->signin_label->setText("<a href='#'>Sign up</a>");
+    ui->signin_label->setTextFormat(Qt::RichText);
+    ui->signin_label->setTextInteractionFlags(Qt::TextBrowserInteraction);
+    ui->signin_label->setOpenExternalLinks(false);
+    ui->forgot_password_label->setText("<a href='#'>Forgot password?</a>");
+    ui->forgot_password_label->setTextFormat(Qt::RichText);
+    ui->forgot_password_label->setTextInteractionFlags(Qt::TextBrowserInteraction);
+    ui->forgot_password_label->setOpenExternalLinks(false);
     // Connect login button
-    QObject::connect(ui->login_button, &QPushButton::clicked, this, &MainWindow::on_login_button_clicked);
+    connect(ui->login_button, &QPushButton::clicked, this, &MainWindow::on_login_button_clicked);
 
     QObject::connect(this, &MainWindow::click_login_button, this, &MainWindow::send_message);
 

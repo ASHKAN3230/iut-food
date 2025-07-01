@@ -23,8 +23,6 @@ public:
 
     void click_back_button();
 
-    void click_shopping_basket_button();
-
     void open_menu_from_database();
 
     void receive_message();
@@ -49,13 +47,9 @@ public:
 
 signals:
 
-    void click_shop();
-
     void click_server();
 
 public slots:
-    void on_shopping_basket_button_clicked();
-
     void send_message();
 
     void on_addFoodButton_clicked();
@@ -67,10 +61,6 @@ public slots:
     void on_clearFormButton_clicked();
 
     void on_menuItem_selected();
-
-    void on_profile_button_clicked();
-
-    void on_logout_button_clicked();
 
     void on_refreshOrdersButton_clicked();
 
@@ -91,6 +81,8 @@ public slots:
     void onMenuItemDeleted(const QString &message);
     void onMenuItemDeletedFailed(const QString &error);
     void onMenuItemOperationFailed(const QString &error);
+    // Profile tab slot
+    void on_saveProfileButton_clicked();
 
 private:
     Ui::menu_restaurant *ui;
