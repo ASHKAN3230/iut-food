@@ -37,6 +37,8 @@ public:
 
     void populate_orders_table();
 
+    void setAuthWarningVisible(bool visible);
+
     static int index;
 
     std::string message;

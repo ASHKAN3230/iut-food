@@ -505,3 +505,9 @@ void menu_restaurant::populate_orders_table()
 
 void menu_restaurant::send_message() {}
 
+void menu_restaurant::setAuthWarningVisible(bool visible) {
+    if (ui && ui->authWarningLabel) {
+        ui->authWarningLabel->setVisible(visible);
+    }
+}
+

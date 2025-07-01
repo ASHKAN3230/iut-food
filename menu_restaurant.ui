@@ -28,6 +28,22 @@
     </widget>
    </item>
    <item>
+    <widget class="QLabel" name="authWarningLabel">
+     <property name="text">
+      <string>⚠ Please complete your restaurant authentication form before using the dashboard.</string>
+     </property>
+     <property name="visible">
+      <bool>false</bool>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background: #d32f2f; color: #fff; font: 700 11pt 'Segoe UI'; border-radius: 6px; padding: 8px; margin-bottom: 8px;</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <layout class="QHBoxLayout" name="navLayout"/>
    </item>
    <item>
