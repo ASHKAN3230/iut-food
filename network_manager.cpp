@@ -195,7 +195,6 @@ void NetworkManager::handleResponse(QNetworkReply *reply, const QString &operati
         QString errorMsg = QString("Network error: %1").arg(reply->errorString());
         qWarning() << errorMsg;
         emit networkError(errorMsg);
-        // Handle restaurant creation failure
         if (operation == "/api/restaurants/create") {
             emit restaurantCreated(false);
         }
@@ -210,21 +209,27 @@ void NetworkManager::handleResponse(QNetworkReply *reply, const QString &operati
         QString errorMsg = QString("JSON parse error: %1").arg(parseError.errorString());
         qWarning() << errorMsg;
         emit networkError(errorMsg);
-        // Handle restaurant creation failure
         if (operation == "/api/restaurants/create") {
             emit restaurantCreated(false);
         }
         return;
     }
 
-    // Handle direct array response for menu endpoints
-    if (doc.isArray()) {
-        QJsonObject obj;
-        obj["menu"] = doc.array();
-        if (operation.startsWith("/api/restaurants/") && operation.endsWith("/menu")) {
-            handleMenuResponse(obj);
+    // Handle direct array response for /api/restaurants
+    if (operation == "/api/restaurants" && doc.isArray()) {
+        QJsonArray restaurants = doc.array();
+        emit restaurantsReceived(restaurants);
+        return;
+    }
+
+    // Handle direct array response for /api/restaurants/:id/menu
+    if (operation.startsWith("/api/restaurants/") && operation.endsWith("/menu")) {
+        if (doc.isArray()) {
+            emit menuReceived(doc.array());
             return;
         }
+        handleMenuResponse(doc.object());
+        return;
     }
 
     QJsonObject response = doc.object();
