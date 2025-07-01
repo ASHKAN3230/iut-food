@@ -13,6 +13,14 @@
 #include<QVBoxLayout>
 #include<QLabel>
 #include<QPushButton>
+#include <QJsonDocument>
+#include <QJsonArray>
+#include <QJsonObject>
+#include <QNetworkReply>
+#include "network_manager.h"
+#include <QSizePolicy>
+#include <QGridLayout>
+#include <QHBoxLayout>
 
 customer::customer(const QString &username, QWidget *parent)
     : QWidget(parent)
@@ -20,6 +28,7 @@ customer::customer(const QString &username, QWidget *parent)
 {
     ui->setupUi(this);
     currentUsername = username;
+    fetchAndDisplayRestaurants();
 
     connect(this, &customer::click_search_button, this, &customer::send_message);
 
@@ -252,4 +261,118 @@ void customer::receive_message()
 
     }
 
+}
+
+void customer::displayRestaurants(const QJsonArray &restaurants) {
+    // Clear previous results
+    QLayoutItem *child;
+    while ((child = ui->resultsLayout->takeAt(0)) != nullptr) {
+        delete child->widget();
+        delete child;
+    }
+    // Use QVBoxLayout for vertical list
+    QVBoxLayout *vbox = qobject_cast<QVBoxLayout*>(ui->resultsLayout);
+    if (!vbox) return;
+    int cardHeight = 110;
+    int cardCount = restaurants.size();
+    int cardSpacing = 6; // px
+    for (int i = 0; i < cardCount; ++i) {
+        const QJsonValue &val = restaurants[i];
+        QJsonObject obj = val.toObject();
+        QWidget *card = new QWidget;
+        QHBoxLayout *hbox = new QHBoxLayout(card);
+        hbox->setContentsMargins(0, 0, 0, 0);
+        hbox->setSpacing(0);
+        QLabel *nameLabel = new QLabel("<b>" + obj["name"].toString() + "</b>");
+        QLabel *typeLabel = new QLabel(obj["type"].toString());
+        QLabel *descLabel = new QLabel(obj["description"].toString());
+        QLabel *locLabel = new QLabel("Location: " + obj["location"].toString());
+        QLabel *priceLabel = new QLabel("Price: " + QString::number(obj["minPrice"].toInt()) + " - " + QString::number(obj["maxPrice"].toInt()));
+        QFont infoFont = typeLabel->font();
+        infoFont.setPointSize(infoFont.pointSize() - 1);
+        typeLabel->setFont(infoFont);
+        descLabel->setFont(infoFont);
+        locLabel->setFont(infoFont);
+        priceLabel->setFont(infoFont);
+        nameLabel->setStyleSheet("border: none; background: transparent;");
+        typeLabel->setStyleSheet("border: none; background: transparent;");
+        descLabel->setStyleSheet("border: none; background: transparent;");
+        locLabel->setStyleSheet("border: none; background: transparent;");
+        priceLabel->setStyleSheet("border: none; background: transparent;");
+        QVBoxLayout *infoLayout = new QVBoxLayout();
+        infoLayout->setContentsMargins(0, 0, 0, 0);
+        infoLayout->setSpacing(2);
+        infoLayout->addWidget(nameLabel);
+        infoLayout->addWidget(typeLabel);
+        infoLayout->addWidget(descLabel);
+        infoLayout->addWidget(locLabel);
+        infoLayout->addWidget(priceLabel);
+        hbox->addLayout(infoLayout, 1);
+        QPushButton *viewMenuBtn = new QPushButton("View Menu");
+        hbox->addWidget(viewMenuBtn, 0, Qt::AlignRight | Qt::AlignVCenter);
+        card->setLayout(hbox);
+        card->setFixedHeight(cardHeight);
+        card->setMinimumHeight(cardHeight);
+        card->setMaximumHeight(cardHeight);
+        card->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+        card->setStyleSheet("border: 1px solid #cccccc; border-radius: 0px; background: #fff;");
+        vbox->addWidget(card);
+        if (i < cardCount - 1) {
+            vbox->addSpacing(cardSpacing);
+        }
+        connect(viewMenuBtn, &QPushButton::clicked, [this, obj]() {
+            fetchAndDisplayMenu(obj["id"].toInt(), obj["name"].toString());
+        });
+    }
+    vbox->setSizeConstraint(QLayout::SetMinAndMaxSize);
+}
+
+void customer::displayMenu(const QJsonArray &menu, const QString &restaurantName) {
+    // Clear previous results
+    QLayoutItem *child;
+    while ((child = ui->resultsLayout->takeAt(0)) != nullptr) {
+        delete child->widget();
+        delete child;
+    }
+    QLabel *header = new QLabel("<b>Menu for " + restaurantName + "</b>");
+    ui->resultsLayout->addWidget(header);
+    for (const QJsonValue &val : menu) {
+        QJsonObject obj = val.toObject();
+        QWidget *card = new QWidget;
+        QVBoxLayout *vbox = new QVBoxLayout(card);
+        vbox->addWidget(new QLabel("<b>" + obj["foodName"].toString() + "</b>"));
+        vbox->addWidget(new QLabel(obj["foodType"].toString()));
+        vbox->addWidget(new QLabel(obj["foodDetails"].toString()));
+        vbox->addWidget(new QLabel("Price: " + QString::number(obj["price"].toInt())));
+        QPushButton *orderBtn = new QPushButton("Order");
+        vbox->addWidget(orderBtn);
+        ui->resultsLayout->addWidget(card);
+        connect(orderBtn, &QPushButton::clicked, [this, obj, restaurantName]() {
+            orderFood(obj["id"].toInt(), restaurantName, obj["foodName"].toString());
+        });
+    }
+    // Add a back button to return to restaurant list
+    QPushButton *backBtn = new QPushButton("Back to Restaurants");
+    ui->resultsLayout->addWidget(backBtn);
+    connect(backBtn, &QPushButton::clicked, this, &customer::fetchAndDisplayRestaurants);
+}
+
+void customer::fetchAndDisplayRestaurants() {
+    NetworkManager* netManager = NetworkManager::getInstance();
+    connect(netManager, &NetworkManager::restaurantsReceived, this, &customer::displayRestaurants, Qt::UniqueConnection);
+    netManager->getRestaurants();
+}
+
+void customer::fetchAndDisplayMenu(int restaurantId, const QString &restaurantName) {
+    NetworkManager* netManager = NetworkManager::getInstance();
+    connect(netManager, &NetworkManager::menuReceived, this, [this, restaurantName](const QJsonArray &menu) {
+        displayMenu(menu, restaurantName);
+    }, Qt::UniqueConnection);
+    netManager->getRestaurantMenu(restaurantId);
+}
+
+void customer::orderFood(int foodId, const QString &restaurantName, const QString &foodName) {
+    // Show a dialog or send an order request using NetworkManager
+    QMessageBox::information(this, "Order", "Order placed for '" + foodName + "' at " + restaurantName);
+    // TODO: Implement actual order API call
 }

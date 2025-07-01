@@ -9,6 +9,7 @@
 #include<string>
 #include<QTcpSocket>
 #include<QTcpServer>
+#include<QJsonArray>
 
 namespace Ui {
 class customer;
@@ -36,6 +37,13 @@ public:
     QMap<QString,QMap<QString,QPair<QVector<QString>,QPair<int,int>>>> restaurant_list;
 
     ~customer();
+
+    // New API-driven UI methods
+    void fetchAndDisplayRestaurants();
+    void fetchAndDisplayMenu(int restaurantId, const QString &restaurantName);
+    void displayRestaurants(const QJsonArray &restaurants);
+    void displayMenu(const QJsonArray &menu, const QString &restaurantName);
+    void orderFood(int foodId, const QString &restaurantName, const QString &foodName);
 
 signals:
 
