@@ -9,6 +9,10 @@
 #include<QFile>
 #include<QListWidgetItem>
 #include<QMessageBox>
+#include<QWidget>
+#include<QVBoxLayout>
+#include<QLabel>
+#include<QPushButton>
 
 customer::customer(const QString &username, QWidget *parent)
     : QWidget(parent)
@@ -45,91 +49,61 @@ customer::~customer()
 
 void customer::open_file()
 {
-
     QFile file_8("files/restaurants_list.txt");
-
     QString line;
-
     QString str;
-
     QString key_type;
-
     QString key_name;
-
     QVector<QString> vec;
-
     QStringList strlist;
-
     int minimum_number;
-
     int maximum_number;
-
     int index = 0;
-
     if(file_8.open(QIODevice::ReadOnly | QIODevice::Text))
     {
-
         QTextStream in(&file_8);
-
+        // Clear previous results
+        QLayoutItem *child;
+        while ((child = ui->resultsLayout->takeAt(0)) != nullptr) {
+            delete child->widget();
+            delete child;
+        }
         while(!in.atEnd())
         {
-
-            clicklabel *cl = new clicklabel();
-
-            cl->setStyleSheet(" font: 9pt Segoe UI;color: rgb(250, 144, 169);background-color: rgba(255,255,255,0);");
-
             key_type = in.readLine().trimmed();
-
-            line = key_type;
-
-            line = line + " ";
-
-            cl->setText(line);
-
             key_name = in.readLine().trimmed();
-
-            line = line + key_name;
-
-            line = line + " ";
-
-            cl->setText(line);
-
             str = in.readLine().trimmed();
-
             strlist = str.split("-");
-
             vec = strlist.toVector();
-
             str = in.readLine().trimmed();
-
             minimum_number = str.toInt();
-
             str = in.readLine().trimmed();
-
             maximum_number = str.toInt();
-
             QPair<int,int> range(minimum_number,maximum_number);
-
             QPair<QVector<QString>, QPair<int,int>> data(vec,range);
-
             restaurant_list[key_type][key_name] = data;
-
-            QListWidgetItem *li = new QListWidgetItem(ui->bord_ListWidget);
-
-            ui->bord_ListWidget->setItemWidget(li,cl);
-
-            connect(cl, &clicklabel::clicked, [this,index](){this->open_next_window(index);});
-
+            // Create food result widget
+            QWidget *foodWidget = new QWidget;
+            QVBoxLayout *vbox = new QVBoxLayout(foodWidget);
+            QLabel *nameLabel = new QLabel("<b>" + key_name + "</b>");
+            QLabel *restaurantLabel = new QLabel("Restaurant: " + key_type);
+            QLabel *descLabel = new QLabel("Description: " + strlist.join(", "));
+            QLabel *priceLabel = new QLabel("Price: " + QString::number(minimum_number) + " - " + QString::number(maximum_number));
+            QPushButton *orderButton = new QPushButton("Order");
+            vbox->addWidget(nameLabel);
+            vbox->addWidget(restaurantLabel);
+            vbox->addWidget(descLabel);
+            vbox->addWidget(priceLabel);
+            vbox->addWidget(orderButton);
+            foodWidget->setLayout(vbox);
+            ui->resultsLayout->addWidget(foodWidget);
+            // Optionally connect orderButton to a slot
+            // connect(orderButton, &QPushButton::clicked, ...);
             line = in.readLine();
-
             index++;
-
         }
-
         file_8.close();
-
     }
-
 }
 
 void customer::open_next_window(int index)
@@ -151,159 +125,51 @@ void customer::click_search_button()
 
 void customer::on_search_button_clicked()
 {
-
-    QString line;
-
-    int index_1 = 0;
-
-    QString minimum_price = ui->minimum_price_lineedit->text();
-
-    int min_price = minimum_price.toInt();
-
-    QString maximum_price = ui->maximum_price_lineedit->text();
-
-    int max_price = maximum_price.toInt();
-
-    QString position = ui->position_lineedit->text();
-
-    ui->bord_ListWidget->clear();
-
-    //searh about price
+    QString searchText = ui->search_lineedit->text().trimmed();
+    // Clear previous results
+    QLayoutItem *child;
+    while ((child = ui->resultsLayout->takeAt(0)) != nullptr) {
+        delete child->widget();
+        delete child;
+    }
+    int index = 0;
     for(auto i = restaurant_list.begin(); i != restaurant_list.end(); ++i)
     {
-
         QMap<QString,QPair<QVector<QString>, QPair<int,int>>> &restaurant_name = i.value();
-
         for(auto j = restaurant_name.begin(); j != restaurant_name.end(); ++j)
         {
-
             QPair<QVector<QString>, QPair<int,int>> restaurant_position = j.value();
-
-            QPair<int,int> range = restaurant_position.second;
-
-            if(min_price <= range.first && range.second <= max_price)
+            QString foodName = j.key();
+            QString restaurantType = i.key();
+            QString description = restaurant_position.first.join(", ");
+            int minPrice = restaurant_position.second.first;
+            int maxPrice = restaurant_position.second.second;
+            // Simple search: match if searchText is in food name, restaurant type, or description
+            if (searchText.isEmpty() ||
+                foodName.contains(searchText, Qt::CaseInsensitive) ||
+                restaurantType.contains(searchText, Qt::CaseInsensitive) ||
+                description.contains(searchText, Qt::CaseInsensitive))
             {
-
-                clicklabel *cl = new clicklabel();
-
-                QListWidgetItem *li = new QListWidgetItem(ui->bord_ListWidget);
-
-                line = i.key() + " " + j.key();
-
-                cl->setText(line);
-
-                cl->setStyleSheet(" font: 9pt Segoe UI;color: rgb(250, 144, 169);background-color: rgba(255,255,255,0);");
-
-                ui->bord_ListWidget->setItemWidget(li,cl);
-
-                connect(cl, &clicklabel::clicked, [this,index_1](){this->open_next_window(index_1);});
-
-                index_1++;
-
+                QWidget *foodWidget = new QWidget;
+                QVBoxLayout *vbox = new QVBoxLayout(foodWidget);
+                QLabel *nameLabel = new QLabel("<b>" + foodName + "</b>");
+                QLabel *restaurantLabel = new QLabel("Restaurant: " + restaurantType);
+                QLabel *descLabel = new QLabel("Description: " + description);
+                QLabel *priceLabel = new QLabel("Price: " + QString::number(minPrice) + " - " + QString::number(maxPrice));
+                QPushButton *orderButton = new QPushButton("Order");
+                vbox->addWidget(nameLabel);
+                vbox->addWidget(restaurantLabel);
+                vbox->addWidget(descLabel);
+                vbox->addWidget(priceLabel);
+                vbox->addWidget(orderButton);
+                foodWidget->setLayout(vbox);
+                ui->resultsLayout->addWidget(foodWidget);
+                // Optionally connect orderButton to a slot
+                // connect(orderButton, &QPushButton::clicked, ...);
+                index++;
             }
-
         }
-
     }
-    //search about position
-    QStringList list = position.split("-");
-
-    QVector<QString> position_section = list.toVector();
-
-    index_1 = 0;
-
-    int index_2 = 0;
-
-    bool state = false;
-
-    if((min_price == 0 && max_price == 0) || (min_price != 0 && max_price != 0 && position != ""))
-    {
-
-        ui->bord_ListWidget->clear();
-
-    }
-
-    for(auto i = restaurant_list.begin(); i != restaurant_list.end(); ++i)
-    {
-
-        QMap<QString,QPair<QVector<QString>, QPair<int,int>>> &restaurant_name = i.value();
-
-        for(auto j = restaurant_name.begin(); j != restaurant_name.end(); ++j)
-        {
-
-            QPair<QVector<QString>, QPair<int,int>> restaurant_position = j.value();
-
-            QPair<int,int> range = restaurant_position.second;
-
-            for(QString &s: position_section)
-            {
-
-                if(s != restaurant_position.first[index_2])
-                {
-
-                    state = false;
-
-                    break;
-
-                }
-                else
-                {
-
-                    if(min_price == 0 && max_price == 0)
-                    {
-
-                        state = true;
-
-                        index_2++;
-
-                    }
-                    else if(min_price != 0 && max_price != 0)
-                    {
-
-                        if(min_price <= range.first && range.second <= max_price)
-                        {
-
-                            state = true;
-
-                            index_2++;
-
-                        }
-
-                    }
-
-                }
-
-            }
-
-            if(state == true)
-            {
-
-                clicklabel *cl = new clicklabel();
-
-                QListWidgetItem *li = new QListWidgetItem(ui->bord_ListWidget);
-
-                line = i.key() + " " + j.key();
-
-                cl->setText(line);
-
-                cl->setStyleSheet(" font: 9pt Segoe UI;color: rgb(250, 144, 169);background-color: rgba(255,255,255,0);");
-
-                ui->bord_ListWidget->setItemWidget(li,cl);
-
-                connect(cl, &clicklabel::clicked, [this,index_1](){this->open_next_window(index_1);});
-
-                index_1++;
-
-            }
-
-            index_2 = 0;
-
-            state = false;
-
-        }
-
-    }
-
 }
 
 void customer::click_back_button()
