@@ -39,7 +39,17 @@
       <set>Qt::AlignCenter</set>
      </property>
      <property name="styleSheet">
-      <string notr="true">background: #d32f2f; color: #fff; font: 700 11pt 'Segoe UI'; border-radius: 6px; padding: 8px; margin-bottom: 8px;</string>
+      <string notr="true">background: rgba(255,255,0,0.5); color: #000; font: 700 11pt 'Segoe UI'; padding: 8px;</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="applyAuthButton">
+     <property name="text">
+      <string>Apply authentication</string>
+     </property>
+     <property name="visible">
+      <bool>false</bool>
      </property>
     </widget>
    </item>

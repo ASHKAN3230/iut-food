@@ -21,6 +21,7 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QDebug>
+#include <QNetworkReply>
 
 menu_restaurant::menu_restaurant(const QString &username, int restaurantId, QWidget *parent)
     : QWidget(parent)
@@ -29,7 +30,6 @@ menu_restaurant::menu_restaurant(const QString &username, int restaurantId, QWid
     , currentRestaurantId(restaurantId)
 {
     ui->setupUi(this);
-    setFixedSize(700, 600);
     currentRestaurantUsername = username;
 
     // Connect network manager signals
@@ -57,6 +57,7 @@ menu_restaurant::menu_restaurant(const QString &username, int restaurantId, QWid
     connect(ui->updateStatusButton, &QPushButton::clicked, this, &menu_restaurant::on_updateStatusButton_clicked);
     // Profile tab logic
     connect(ui->saveProfileButton, &QPushButton::clicked, this, &menu_restaurant::on_saveProfileButton_clicked);
+    connect(ui->applyAuthButton, &QPushButton::clicked, this, &menu_restaurant::on_applyAuthButton_clicked);
 
     socket.connectToHost("127.0.0.1",6006);
     if(socket.waitForConnected(1000))
@@ -73,6 +74,8 @@ menu_restaurant::menu_restaurant(const QString &username, int restaurantId, QWid
         loadMenuFromServer();
         loadOrdersFromServer();
     }
+    // Fetch and set auth warning
+    fetchAndSetAuthWarning();
 }
 
 menu_restaurant::~menu_restaurant()
@@ -509,5 +512,43 @@ void menu_restaurant::setAuthWarningVisible(bool visible) {
     if (ui && ui->authWarningLabel) {
         ui->authWarningLabel->setVisible(visible);
     }
+}
+
+void menu_restaurant::updateAuthWarning(bool isAuth) {
+    setAuthWarningVisible(!isAuth);
+    if (ui && ui->applyAuthButton) {
+        ui->applyAuthButton->setVisible(!isAuth);
+    }
+}
+
+void menu_restaurant::fetchAndSetAuthWarning() {
+    // Fetch user info from server and update auth warning
+    NetworkManager* netManager = NetworkManager::getInstance();
+    // Assume currentRestaurantId is the user id for restaurant users
+    if (currentRestaurantId > 0) {
+        QNetworkRequest request(QUrl(netManager->getServerUrl() + "/api/users/" + QString::number(currentRestaurantId)));
+        QNetworkAccessManager* manager = new QNetworkAccessManager(this);
+        connect(manager, &QNetworkAccessManager::finished, this, [this, manager](QNetworkReply* reply) {
+            QByteArray responseData = reply->readAll();
+            QJsonDocument doc = QJsonDocument::fromJson(responseData);
+            if (doc.isObject()) {
+                QJsonObject obj = doc.object();
+                if (obj.contains("isAuth")) {
+                    updateAuthWarning(obj["isAuth"].toBool());
+                }
+            }
+            reply->deleteLater();
+            manager->deleteLater();
+        });
+        manager->get(request);
+    }
+}
+
+void menu_restaurant::on_applyAuthButton_clicked() {
+    // Open the restaurant_auth window for authentication
+    restaurant_auth *authWindow = new restaurant_auth(currentRestaurantUsername);
+    authWindow->setAttribute(Qt::WA_DeleteOnClose);
+    authWindow->show();
+    this->close();
 }
 

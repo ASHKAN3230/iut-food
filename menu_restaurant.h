@@ -85,6 +85,8 @@ public slots:
     void onMenuItemOperationFailed(const QString &error);
     // Profile tab slot
     void on_saveProfileButton_clicked();
+    void updateAuthWarning(bool isAuth);
+    void on_applyAuthButton_clicked();
 
 private:
     Ui::menu_restaurant *ui;
@@ -98,6 +100,7 @@ private:
     void getRestaurantInfo();
     void loadMenuFromServer();
     void loadOrdersFromServer();
+    void fetchAndSetAuthWarning();
 };
 
 #endif // MENU_RESTAURANT_H
