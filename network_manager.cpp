@@ -150,6 +150,13 @@ void NetworkManager::createRestaurant(const QJsonObject &data)
     sendRequest("/api/restaurants/create", "POST", data);
 }
 
+void NetworkManager::forgotPassword(const QString &username, const QString &newPassword) {
+    QJsonObject data;
+    data["username"] = username;
+    data["password"] = newPassword;
+    sendRequest("/api/forgot-password", "POST", data);
+}
+
 void NetworkManager::sendRequest(const QString &endpoint, const QString &method, const QJsonObject &data)
 {
     QNetworkRequest request = createRequest(endpoint);
@@ -262,6 +269,13 @@ void NetworkManager::handleResponse(QNetworkReply *reply, const QString &operati
         handleOrderStatusResponse(response);
     } else if (operation == "/api/health") {
         handleHealthResponse(response);
+    } else if (operation == "/api/forgot-password" && reply->property("method").toString() == "POST") {
+        if (response.contains("error")) {
+            emit forgotPasswordFailed(response["error"].toString());
+        } else {
+            emit forgotPasswordSuccess(response["message"].toString());
+        }
+        return;
     }
     // Handle restaurant creation response
     if (operation == "/api/restaurants/create") {

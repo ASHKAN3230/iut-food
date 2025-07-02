@@ -25,6 +25,7 @@ public:
     // Authentication
     void login(const QString &username, const QString &password);
     void registerUser(const QString &username, const QString &password, const QString &userType);
+    void forgotPassword(const QString &username, const QString &newPassword);
     
     // Restaurant operations
     void getRestaurants();
@@ -55,6 +56,8 @@ signals:
     void loginFailed(const QString &error);
     void registerSuccess(const QString &message);
     void registerFailed(const QString &error);
+    void forgotPasswordSuccess(const QString &message);
+    void forgotPasswordFailed(const QString &error);
     
     // Restaurant signals
     void restaurantsReceived(const QJsonArray &restaurants);

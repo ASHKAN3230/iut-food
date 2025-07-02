@@ -4,6 +4,7 @@
 #include<QString>
 #include<QFile>
 #include<QMessageBox>
+#include "network_manager.h"
 
 forgot_password::forgot_password(QWidget *parent)
     : QWidget(parent)
@@ -45,7 +46,13 @@ void forgot_password::on_forgot_password_button_clicked()
         QMessageBox::warning(this, "Input Error", "Passwords do not match");
         return;
     }
-    // Simulate password reset
-    QMessageBox::information(this, "Success", "Password has been reset!");
-    on_back_button_2_clicked();
+    NetworkManager* netManager = NetworkManager::getInstance();
+    connect(netManager, &NetworkManager::forgotPasswordSuccess, this, [this](const QString &msg) {
+        QMessageBox::information(this, "Success", msg);
+        on_back_button_2_clicked();
+    });
+    connect(netManager, &NetworkManager::forgotPasswordFailed, this, [this](const QString &err) {
+        QMessageBox::warning(this, "Error", err);
+    });
+    netManager->forgotPassword(username, password);
 }
