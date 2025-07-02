@@ -40,11 +40,22 @@
       </attribute>
       <layout class="QVBoxLayout" name="mainTabLayout">
        <item>
-        <widget class="QLineEdit" name="search_lineedit">
-         <property name="placeholderText">
-          <string>Search restaurants or foods...</string>
-         </property>
-        </widget>
+        <layout class="QHBoxLayout" name="filterSearchLayout">
+         <item>
+          <widget class="QComboBox" name="filterComboBox">
+           <property name="sizeAdjustPolicy">
+            <enum>QComboBox::AdjustToContents</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="search_lineedit">
+           <property name="placeholderText">
+            <string>Search restaurants or foods...</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
        <item>
         <widget class="QScrollArea" name="resultsScrollArea">

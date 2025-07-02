@@ -65,6 +65,8 @@ public slots:
 
     void send_message();
 
+    void on_filterComboBox_currentIndexChanged(int index);
+
 private:
     Ui::customer *ui;
     QString currentUsername;

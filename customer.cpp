@@ -22,6 +22,7 @@
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QTabWidget>
+#include <QComboBox>
 
 customer::customer(const QString &username, int userId, QWidget *parent)
     : QWidget(parent)
@@ -30,6 +31,13 @@ customer::customer(const QString &username, int userId, QWidget *parent)
     ui->setupUi(this);
     currentUsername = username;
     currentUserId = userId;
+    // Populate filterComboBox with example options
+    ui->filterComboBox->addItem("All");
+    ui->filterComboBox->addItem("Fast Food");
+    ui->filterComboBox->addItem("Cafe");
+    ui->filterComboBox->addItem("Restaurant");
+    ui->filterComboBox->addItem("Dessert");
+    connect(ui->filterComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &customer::on_filterComboBox_currentIndexChanged);
     fetchAndDisplayRestaurants();
     // Connect tab change to fetch orders
     connect(ui->tabWidget, &QTabWidget::currentChanged, this, [this](int idx) {
@@ -271,6 +279,14 @@ void customer::receive_message()
 
 }
 
+void customer::on_filterComboBox_currentIndexChanged(int index) {
+    // Example: filter restaurants by type
+    QString selectedType = ui->filterComboBox->currentText();
+    // You may want to store the last fetched restaurants in a member variable for filtering
+    // For now, just refetch and filter in displayRestaurants
+    fetchAndDisplayRestaurants();
+}
+
 void customer::displayRestaurants(const QJsonArray &restaurants) {
     QVBoxLayout *vbox = qobject_cast<QVBoxLayout*>(ui->resultsContainer->layout());
     if (!vbox) return;
@@ -283,9 +299,13 @@ void customer::displayRestaurants(const QJsonArray &restaurants) {
     int cardHeight = 110;
     int cardCount = restaurants.size();
     int cardSpacing = 6; // px
+    QString selectedType = ui->filterComboBox->currentText();
+    int shownCount = 0;
     for (int i = 0; i < cardCount; ++i) {
         const QJsonValue &val = restaurants[i];
         QJsonObject obj = val.toObject();
+        if (selectedType != "All" && obj["type"].toString() != selectedType)
+            continue;
         QWidget *card = new QWidget;
         QHBoxLayout *hbox = new QHBoxLayout(card);
         hbox->setContentsMargins(0, 0, 0, 0);
@@ -324,7 +344,7 @@ void customer::displayRestaurants(const QJsonArray &restaurants) {
         card->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
         card->setStyleSheet("border: 1px solid #cccccc; border-radius: 0px; background: #fff;");
         vbox->addWidget(card);
-        if (i < cardCount - 1) {
+        if (shownCount < cardCount - 1) {
             vbox->addSpacing(cardSpacing);
         }
         connect(viewMenuBtn, &QPushButton::clicked, [this, obj]() {
@@ -337,6 +357,7 @@ void customer::displayRestaurants(const QJsonArray &restaurants) {
             });
             netManager->getRestaurantMenu(restaurantId);
         });
+        ++shownCount;
     }
     vbox->setSizeConstraint(QLayout::SetMinAndMaxSize);
 }
@@ -347,27 +368,47 @@ void customer::displayMenu(const QJsonArray &menu, const QString &restaurantName
     dialog->setWindowTitle("Menu for " + restaurantName);
     dialog->resize(600, 400);
     QVBoxLayout* layout = new QVBoxLayout(dialog);
+    // Add food type filter
+    QComboBox* foodTypeCombo = new QComboBox(dialog);
+    QSet<QString> foodTypes;
+    for (const QJsonValue &val : menu) {
+        QJsonObject item = val.toObject();
+        foodTypes.insert(item["foodType"].toString());
+    }
+    foodTypeCombo->addItem("All");
+    for (const QString &ft : foodTypes) foodTypeCombo->addItem(ft);
+    layout->addWidget(foodTypeCombo);
     QTableWidget* table = new QTableWidget(dialog);
     table->setColumnCount(5);
     table->setHorizontalHeaderLabels({"Type", "Name", "Details", "Price", "Order"});
     table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    table->setRowCount(menu.size());
-    for (int i = 0; i < menu.size(); ++i) {
-        QJsonObject item = menu[i].toObject();
-        table->setItem(i, 0, new QTableWidgetItem(item["foodType"].toString()));
-        table->setItem(i, 1, new QTableWidgetItem(item["foodName"].toString()));
-        table->setItem(i, 2, new QTableWidgetItem(item["foodDetails"].toString()));
-        table->setItem(i, 3, new QTableWidgetItem(QString::number(item["price"].toInt())));
-        QPushButton* orderBtn = new QPushButton("Order");
-        table->setCellWidget(i, 4, orderBtn);
-        connect(orderBtn, &QPushButton::clicked, this, [this, item, restaurantName, restaurantId, dialog]() {
-            orderFood(restaurantId, item["id"].toInt(), restaurantName, item["foodName"].toString(), item["price"].toInt());
-            // Optionally close dialog after ordering:
-            // dialog->accept();
-        });
-    }
+    auto updateTable = [=]() {
+        table->setRowCount(0);
+        QString selectedType = foodTypeCombo->currentText();
+        int row = 0;
+        for (int i = 0; i < menu.size(); ++i) {
+            QJsonObject item = menu[i].toObject();
+            if (selectedType != "All" && item["foodType"].toString() != selectedType)
+                continue;
+            table->insertRow(row);
+            table->setItem(row, 0, new QTableWidgetItem(item["foodType"].toString()));
+            table->setItem(row, 1, new QTableWidgetItem(item["foodName"].toString()));
+            table->setItem(row, 2, new QTableWidgetItem(item["foodDetails"].toString()));
+            table->setItem(row, 3, new QTableWidgetItem(QString::number(item["price"].toInt())));
+            QPushButton* orderBtn = new QPushButton("Order");
+            table->setCellWidget(row, 4, orderBtn);
+            QObject::connect(orderBtn, &QPushButton::clicked, this, [this, item, restaurantName, restaurantId, dialog]() {
+                orderFood(restaurantId, item["id"].toInt(), restaurantName, item["foodName"].toString(), item["price"].toInt());
+                // Optionally close dialog after ordering:
+                // dialog->accept();
+            });
+            ++row;
+        }
+    };
+    QObject::connect(foodTypeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), dialog, updateTable);
     layout->addWidget(table);
     dialog->setLayout(layout);
+    updateTable();
     dialog->exec(); // Modal dialog
 }
 
