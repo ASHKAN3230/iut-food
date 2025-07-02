@@ -272,15 +272,14 @@ void customer::receive_message()
 }
 
 void customer::displayRestaurants(const QJsonArray &restaurants) {
+    QVBoxLayout *vbox = qobject_cast<QVBoxLayout*>(ui->resultsContainer->layout());
+    if (!vbox) return;
     // Clear previous results
     QLayoutItem *child;
-    while ((child = ui->resultsLayout->takeAt(0)) != nullptr) {
+    while ((child = vbox->takeAt(0)) != nullptr) {
         delete child->widget();
         delete child;
     }
-    // Use QVBoxLayout for vertical list
-    QVBoxLayout *vbox = qobject_cast<QVBoxLayout*>(ui->resultsLayout);
-    if (!vbox) return;
     int cardHeight = 110;
     int cardCount = restaurants.size();
     int cardSpacing = 6; // px
@@ -336,46 +335,50 @@ void customer::displayRestaurants(const QJsonArray &restaurants) {
 }
 
 void customer::displayMenu(const QJsonArray &menu, const QString &restaurantName) {
+    QVBoxLayout *vbox = qobject_cast<QVBoxLayout*>(ui->resultsContainer->layout());
+    if (!vbox) return;
     // Clear previous results
     QLayoutItem *child;
-    while ((child = ui->resultsLayout->takeAt(0)) != nullptr) {
+    while ((child = vbox->takeAt(0)) != nullptr) {
         delete child->widget();
         delete child;
     }
     QLabel *header = new QLabel("<b>Menu for " + restaurantName + "</b>");
-    ui->resultsLayout->addWidget(header);
+    vbox->addWidget(header);
     for (const QJsonValue &val : menu) {
         QJsonObject obj = val.toObject();
         QWidget *card = new QWidget;
-        QVBoxLayout *vbox = new QVBoxLayout(card);
-        vbox->addWidget(new QLabel("<b>" + obj["foodName"].toString() + "</b>"));
-        vbox->addWidget(new QLabel(obj["foodType"].toString()));
-        vbox->addWidget(new QLabel(obj["foodDetails"].toString()));
-        vbox->addWidget(new QLabel("Price: " + QString::number(obj["price"].toInt())));
+        QVBoxLayout *cardVbox = new QVBoxLayout(card);
+        cardVbox->addWidget(new QLabel("<b>" + obj["foodName"].toString() + "</b>"));
+        cardVbox->addWidget(new QLabel(obj["foodType"].toString()));
+        cardVbox->addWidget(new QLabel(obj["foodDetails"].toString()));
+        cardVbox->addWidget(new QLabel("Price: " + QString::number(obj["price"].toInt())));
         QPushButton *orderBtn = new QPushButton("Order");
-        vbox->addWidget(orderBtn);
-        ui->resultsLayout->addWidget(card);
+        cardVbox->addWidget(orderBtn);
+        vbox->addWidget(card);
         connect(orderBtn, &QPushButton::clicked, [this, obj, restaurantName]() {
             orderFood(obj["id"].toInt(), restaurantName, obj["foodName"].toString());
         });
     }
     // Add a back button to return to restaurant list
     QPushButton *backBtn = new QPushButton("Back to Restaurants");
-    ui->resultsLayout->addWidget(backBtn);
+    vbox->addWidget(backBtn);
     connect(backBtn, &QPushButton::clicked, this, &customer::fetchAndDisplayRestaurants);
 }
 
 void customer::fetchAndDisplayRestaurants() {
     NetworkManager* netManager = NetworkManager::getInstance();
-    connect(netManager, &NetworkManager::restaurantsReceived, this, &customer::displayRestaurants, Qt::UniqueConnection);
+    disconnect(netManager, &NetworkManager::restaurantsReceived, this, nullptr);
+    connect(netManager, &NetworkManager::restaurantsReceived, this, &customer::displayRestaurants);
     netManager->getRestaurants();
 }
 
 void customer::fetchAndDisplayMenu(int restaurantId, const QString &restaurantName) {
     NetworkManager* netManager = NetworkManager::getInstance();
+    disconnect(netManager, &NetworkManager::menuReceived, this, nullptr);
     connect(netManager, &NetworkManager::menuReceived, this, [this, restaurantName](const QJsonArray &menu) {
         displayMenu(menu, restaurantName);
-    }, Qt::UniqueConnection);
+    });
     netManager->getRestaurantMenu(restaurantId);
 }
 
