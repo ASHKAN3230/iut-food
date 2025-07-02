@@ -127,6 +127,16 @@
             <column/>
            </widget>
           </item>
+          <item>
+           <widget class="QLabel" name="currentOrdersTotalLabel">
+            <property name="text">
+             <string>Total: 0 Taka</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignVCenter</set>
+            </property>
+           </widget>
+          </item>
          </layout>
         </widget>
        </item>

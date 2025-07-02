@@ -462,6 +462,7 @@ void customer::populateOrderTables(const QJsonArray &orders) {
     QTableWidget *completedTable = ui->completedOrdersTableWidget;
     currentTable->setRowCount(0);
     completedTable->setRowCount(0);
+    int currentTotal = 0;
     for (const QJsonValue &val : orders) {
         QJsonObject obj = val.toObject();
         qDebug() << "Order object:" << obj; // DEBUG PRINT
@@ -482,12 +483,15 @@ void customer::populateOrderTables(const QJsonArray &orders) {
         }
         QString statusText = obj["status"].toString();
         if (!statusText.isEmpty()) statusText[0] = statusText[0].toUpper();
-        QString priceText = QString("%1 Taka").arg(obj["totalAmount"].toInt());
+        QString priceText = QString("%1 Tooman").arg(obj["totalAmount"].toInt());
         table->setItem(row, 0, new QTableWidgetItem(orderIdText));
         table->setItem(row, 1, new QTableWidgetItem(dateText));
         table->setItem(row, 2, new QTableWidgetItem(restaurantText));
         table->setItem(row, 3, new QTableWidgetItem(statusText));
         table->setItem(row, 4, new QTableWidgetItem(priceText));
+        if (!isCompleted) {
+            currentTotal += obj["totalAmount"].toInt();
+        }
         if (isCompleted) {
             QPushButton *detailsBtn = new QPushButton("Details");
             table->setCellWidget(row, 5, detailsBtn);
@@ -514,6 +518,8 @@ void customer::populateOrderTables(const QJsonArray &orders) {
             });
         }
     }
+    // Update total label
+    ui->currentOrdersTotalLabel->setText(QString("Total: %1 Tooman").arg(currentTotal));
     // After populating all rows, stretch columns and resize to contents
     for (int col = 0; col < currentTable->columnCount(); ++col) {
         currentTable->horizontalHeader()->setSectionResizeMode(col, QHeaderView::Stretch);
@@ -536,7 +542,7 @@ void customer::showOrderDetails(const QJsonObject &order) {
         details += "\n\nItems:";
         for (const QJsonValue &itemVal : items) {
             QJsonObject item = itemVal.toObject();
-            details += QString("\n- %1 x%2 (%3 Taka)")
+            details += QString("\n- %1 x%2 (%3 Tooman)")
                 .arg(item["foodName"].toString(), QString::number(item["quantity"].toInt()), QString::number(item["price"].toInt()));
         }
     }
