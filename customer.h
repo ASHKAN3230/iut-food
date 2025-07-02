@@ -10,6 +10,7 @@
 #include<QTcpSocket>
 #include<QTcpServer>
 #include<QJsonArray>
+#include<QJsonObject>
 
 namespace Ui {
 class customer;
@@ -71,6 +72,8 @@ private:
     Ui::customer *ui;
     QString currentUsername;
     int currentUserId = -1;
+    void populateOrderTables(const QJsonArray &orders);
+    void showOrderDetails(const QJsonObject &order);
 };
 
 #endif // CUSTOMER_H

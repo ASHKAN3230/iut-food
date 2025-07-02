@@ -453,15 +453,65 @@ void customer::fetchAndDisplayOrders() {
 }
 
 void customer::displayOrders(const QJsonArray &orders) {
-    QTableWidget *ordersTable = ui->ordersTableWidget;
-    ordersTable->setRowCount(0);
+    populateOrderTables(orders);
+}
+
+void customer::populateOrderTables(const QJsonArray &orders) {
+    QTableWidget *currentTable = ui->currentOrdersTableWidget;
+    QTableWidget *completedTable = ui->completedOrdersTableWidget;
+    currentTable->setRowCount(0);
+    completedTable->setRowCount(0);
     for (const QJsonValue &val : orders) {
         QJsonObject obj = val.toObject();
-        int row = ordersTable->rowCount();
-        ordersTable->insertRow(row);
-        ordersTable->setItem(row, 0, new QTableWidgetItem(QString::number(obj["id"].toInt())));
-        ordersTable->setItem(row, 1, new QTableWidgetItem(obj["createdAt"].toString()));
-        ordersTable->setItem(row, 2, new QTableWidgetItem(obj["status"].toString()));
-        ordersTable->setItem(row, 3, new QTableWidgetItem(QString::number(obj["totalAmount"].toInt())));
+        QString status = obj["status"].toString().toLower();
+        bool isCompleted = (status == "completed" || status == "cancelled");
+        QTableWidget *table = isCompleted ? completedTable : currentTable;
+        int row = table->rowCount();
+        table->insertRow(row);
+        table->setItem(row, 0, new QTableWidgetItem(QString::number(obj["id"].toInt())));
+        table->setItem(row, 1, new QTableWidgetItem(obj["createdAt"].toString()));
+        table->setItem(row, 2, new QTableWidgetItem(obj["status"].toString()));
+        table->setItem(row, 3, new QTableWidgetItem(QString::number(obj["totalAmount"].toInt())));
+        if (isCompleted) {
+            QPushButton *detailsBtn = new QPushButton("Details");
+            table->setCellWidget(row, 4, detailsBtn);
+            QJsonObject orderCopy = obj;
+            connect(detailsBtn, &QPushButton::clicked, this, [this, orderCopy]() {
+                showOrderDetails(orderCopy);
+            });
+        } else {
+            QPushButton *deleteBtn = new QPushButton("Delete");
+            table->setCellWidget(row, 4, deleteBtn);
+            int orderId = obj["id"].toInt();
+            connect(deleteBtn, &QPushButton::clicked, this, [this, orderId]() {
+                if (QMessageBox::question(this, "Delete Order", "Are you sure you want to delete this order?") == QMessageBox::Yes) {
+                    NetworkManager* netManager = NetworkManager::getInstance();
+                    connect(netManager, &NetworkManager::orderStatusUpdated, this, [this](const QString &msg) {
+                        QMessageBox::information(this, "Order Cancelled", msg);
+                        fetchAndDisplayOrders();
+                    });
+                    connect(netManager, &NetworkManager::orderStatusUpdateFailed, this, [this](const QString &err) {
+                        QMessageBox::warning(this, "Cancel Failed", err);
+                    });
+                    netManager->updateOrderStatus(orderId, "cancelled");
+                }
+            });
+        }
     }
+}
+
+void customer::showOrderDetails(const QJsonObject &order) {
+    QString details = QString("Order ID: %1\nDate: %2\nStatus: %3\nTotal: %4")
+        .arg(order["id"].toString(), order["createdAt"].toString(), order["status"].toString(), QString::number(order["totalAmount"].toInt()));
+    // If items are available, show them
+    if (order.contains("items") && order["items"].isArray()) {
+        QJsonArray items = order["items"].toArray();
+        details += "\n\nItems:";
+        for (const QJsonValue &itemVal : items) {
+            QJsonObject item = itemVal.toObject();
+            details += QString("\n- %1 x%2 (%3 Taka)")
+                .arg(item["foodName"].toString(), QString::number(item["quantity"].toInt()), QString::number(item["price"].toInt()));
+        }
+    }
+    QMessageBox::information(this, "Order Details", details);
 }

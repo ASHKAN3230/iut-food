@@ -32,7 +32,7 @@
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="mainTab">
       <attribute name="title">
@@ -44,7 +44,7 @@
          <item>
           <widget class="QComboBox" name="filterComboBox">
            <property name="sizeAdjustPolicy">
-            <enum>QComboBox::AdjustToContents</enum>
+            <enum>QComboBox::SizeAdjustPolicy::AdjustToContents</enum>
            </property>
           </widget>
          </item>
@@ -67,8 +67,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>658</width>
-            <height>502</height>
+            <width>668</width>
+            <height>510</height>
            </rect>
           </property>
           <layout class="QVBoxLayout" name="resultsLayout">
@@ -99,22 +99,63 @@
       </attribute>
       <layout class="QVBoxLayout" name="ordersTabLayout">
        <item>
-        <widget class="QTableWidget" name="ordersTableWidget">
-         <property name="columnCount">
-          <number>4</number>
+        <widget class="QGroupBox" name="currentOrdersGroupBox">
+         <property name="title">
+          <string>Current Orders</string>
          </property>
-         <property name="horizontalHeaderLabels" stdset="0">
-          <stringlist>
-           <string>ID</string>
-           <string>Date</string>
-           <string>Status</string>
-           <string>Total</string>
-          </stringlist>
+         <layout class="QVBoxLayout" name="currentOrdersLayout">
+          <item>
+           <widget class="QTableWidget" name="currentOrdersTableWidget">
+            <property name="columnCount">
+             <number>5</number>
+            </property>
+            <property name="horizontalHeaderLabels" stdset="0">
+             <stringlist>
+              <string>ID</string>
+              <string>Date</string>
+              <string>Status</string>
+              <string>Total</string>
+              <string>Details</string>
+             </stringlist>
+            </property>
+            <column/>
+            <column/>
+            <column/>
+            <column/>
+            <column/>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="completedOrdersGroupBox">
+         <property name="title">
+          <string>Completed Orders</string>
          </property>
-         <column/>
-         <column/>
-         <column/>
-         <column/>
+         <layout class="QVBoxLayout" name="completedOrdersLayout">
+          <item>
+           <widget class="QTableWidget" name="completedOrdersTableWidget">
+            <property name="columnCount">
+             <number>5</number>
+            </property>
+            <property name="horizontalHeaderLabels" stdset="0">
+             <stringlist>
+              <string>ID</string>
+              <string>Date</string>
+              <string>Status</string>
+              <string>Total</string>
+              <string>Details</string>
+             </stringlist>
+            </property>
+            <column/>
+            <column/>
+            <column/>
+            <column/>
+            <column/>
+           </widget>
+          </item>
+         </layout>
         </widget>
        </item>
       </layout>
