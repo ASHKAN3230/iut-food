@@ -328,7 +328,40 @@ void customer::displayRestaurants(const QJsonArray &restaurants) {
             vbox->addSpacing(cardSpacing);
         }
         connect(viewMenuBtn, &QPushButton::clicked, [this, obj]() {
-            fetchAndDisplayMenu(obj["id"].toInt(), obj["name"].toString());
+            int restaurantId = obj["id"].toInt();
+            QString restaurantName = obj["name"].toString();
+            NetworkManager* netManager = NetworkManager::getInstance();
+            disconnect(netManager, &NetworkManager::menuReceived, this, nullptr);
+            connect(netManager, &NetworkManager::menuReceived, this, [this, restaurantName](const QJsonArray &menu) {
+                // Create popup dialog
+                QDialog* dialog = new QDialog(this);
+                dialog->setWindowTitle("Menu for " + restaurantName);
+                dialog->resize(600, 400);
+                QVBoxLayout* layout = new QVBoxLayout(dialog);
+                QTableWidget* table = new QTableWidget(dialog);
+                table->setColumnCount(5);
+                table->setHorizontalHeaderLabels({"Type", "Name", "Details", "Price", "Order"});
+                table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+                table->setRowCount(menu.size());
+                for (int i = 0; i < menu.size(); ++i) {
+                    QJsonObject item = menu[i].toObject();
+                    table->setItem(i, 0, new QTableWidgetItem(item["foodType"].toString()));
+                    table->setItem(i, 1, new QTableWidgetItem(item["foodName"].toString()));
+                    table->setItem(i, 2, new QTableWidgetItem(item["foodDetails"].toString()));
+                    table->setItem(i, 3, new QTableWidgetItem(QString::number(item["price"].toInt())));
+                    QPushButton* orderBtn = new QPushButton("Order");
+                    table->setCellWidget(i, 4, orderBtn);
+                    connect(orderBtn, &QPushButton::clicked, this, [this, item, restaurantName, dialog]() {
+                        orderFood(item["id"].toInt(), restaurantName, item["foodName"].toString());
+                        // Optionally close dialog after ordering:
+                        // dialog->accept();
+                    });
+                }
+                layout->addWidget(table);
+                dialog->setLayout(layout);
+                dialog->exec(); // Modal dialog
+            });
+            netManager->getRestaurantMenu(restaurantId);
         });
     }
     vbox->setSizeConstraint(QLayout::SetMinAndMaxSize);
