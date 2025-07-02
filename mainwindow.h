@@ -50,8 +50,6 @@ public slots:
     void open_forgot_window();
 
     void on_login_button_clicked();
-
-    void send_message();
     
     // Network manager slots
     void onLoginSuccess(const QJsonObject &userInfo);

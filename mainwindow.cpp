@@ -35,20 +35,6 @@ MainWindow::MainWindow(QWidget *parent)
     ui->forgot_password_label->setOpenExternalLinks(false);
     // Connect login button
     connect(ui->login_button, &QPushButton::clicked, this, &MainWindow::on_login_button_clicked);
-
-    QObject::connect(this, &MainWindow::click_login_button, this, &MainWindow::send_message);
-
-    QObject::connect(this, &MainWindow::receive_message, this, &MainWindow::on_login_button_clicked);
-
-    socket.connectToHost("127.0.0.1",6006);
-
-    if(socket.waitForConnected(1000))
-    {
-
-        receive_message();
-
-    }
-
 }
 
 void MainWindow::open_signin_window()
@@ -80,15 +66,6 @@ void MainWindow::open_forgot_window()
 MainWindow::~MainWindow()
 {
     delete ui;
-}
-
-void MainWindow::click_login_button()
-{
-
-    message = "login";
-
-    emit click_server();
-
 }
 
 void MainWindow::on_login_button_clicked()
@@ -151,56 +128,4 @@ void MainWindow::onNetworkError(const QString &error)
 {
     QMessageBox::critical(this, "Network Error", 
                          QString("Network error: %1\n\nPlease check if the server is running.").arg(error));
-}
-
-void MainWindow::send_message()
-{
-
-    if(socket.state() == QTcpSocket::ConnectedState)
-    {
-
-    QByteArray byte(this->message.c_str(),this->message.length());
-
-            if(socket.write(byte) > 0)
-            {
-
-                if(!socket.waitForBytesWritten(1000))
-                {
-
-                    QMessageBox::information(this,"not success","message not send!!!");
-
-                }
-
-            }
-
-    }
-
-}
-
-void MainWindow::receive_message()
-{
-
-        if(socket.state() == QTcpSocket::ConnectedState)
-        {
-
-            if(socket.waitForReadyRead(-1))
-            {
-
-                QByteArray byte = socket.readAll();
-
-                this->message = std::string(byte.constData(),byte.length());
-
-                if(message == "start login")
-                {
-
-                    message = "";
-
-                    emit click();
-
-                }
-
-            }
-
-        }
-
 }
