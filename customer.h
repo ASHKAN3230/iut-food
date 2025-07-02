@@ -42,8 +42,8 @@ public:
     void fetchAndDisplayRestaurants();
     void fetchAndDisplayMenu(int restaurantId, const QString &restaurantName);
     void displayRestaurants(const QJsonArray &restaurants);
-    void displayMenu(const QJsonArray &menu, const QString &restaurantName);
-    void orderFood(int foodId, const QString &restaurantName, const QString &foodName);
+    void displayMenu(const QJsonArray &menu, const QString &restaurantName, int restaurantId);
+    void orderFood(int restaurantId, int foodId, const QString &restaurantName, const QString &foodName, int price);
     void fetchAndDisplayOrders();
     void displayOrders(const QJsonArray &orders);
 

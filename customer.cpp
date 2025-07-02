@@ -332,34 +332,8 @@ void customer::displayRestaurants(const QJsonArray &restaurants) {
             QString restaurantName = obj["name"].toString();
             NetworkManager* netManager = NetworkManager::getInstance();
             disconnect(netManager, &NetworkManager::menuReceived, this, nullptr);
-            connect(netManager, &NetworkManager::menuReceived, this, [this, restaurantName](const QJsonArray &menu) {
-                // Create popup dialog
-                QDialog* dialog = new QDialog(this);
-                dialog->setWindowTitle("Menu for " + restaurantName);
-                dialog->resize(600, 400);
-                QVBoxLayout* layout = new QVBoxLayout(dialog);
-                QTableWidget* table = new QTableWidget(dialog);
-                table->setColumnCount(5);
-                table->setHorizontalHeaderLabels({"Type", "Name", "Details", "Price", "Order"});
-                table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-                table->setRowCount(menu.size());
-                for (int i = 0; i < menu.size(); ++i) {
-                    QJsonObject item = menu[i].toObject();
-                    table->setItem(i, 0, new QTableWidgetItem(item["foodType"].toString()));
-                    table->setItem(i, 1, new QTableWidgetItem(item["foodName"].toString()));
-                    table->setItem(i, 2, new QTableWidgetItem(item["foodDetails"].toString()));
-                    table->setItem(i, 3, new QTableWidgetItem(QString::number(item["price"].toInt())));
-                    QPushButton* orderBtn = new QPushButton("Order");
-                    table->setCellWidget(i, 4, orderBtn);
-                    connect(orderBtn, &QPushButton::clicked, this, [this, item, restaurantName, dialog]() {
-                        orderFood(item["id"].toInt(), restaurantName, item["foodName"].toString());
-                        // Optionally close dialog after ordering:
-                        // dialog->accept();
-                    });
-                }
-                layout->addWidget(table);
-                dialog->setLayout(layout);
-                dialog->exec(); // Modal dialog
+            connect(netManager, &NetworkManager::menuReceived, this, [this, restaurantName, restaurantId](const QJsonArray &menu) {
+                displayMenu(menu, restaurantName, restaurantId);
             });
             netManager->getRestaurantMenu(restaurantId);
         });
@@ -367,36 +341,34 @@ void customer::displayRestaurants(const QJsonArray &restaurants) {
     vbox->setSizeConstraint(QLayout::SetMinAndMaxSize);
 }
 
-void customer::displayMenu(const QJsonArray &menu, const QString &restaurantName) {
-    QVBoxLayout *vbox = qobject_cast<QVBoxLayout*>(ui->resultsContainer->layout());
-    if (!vbox) return;
-    // Clear previous results
-    QLayoutItem *child;
-    while ((child = vbox->takeAt(0)) != nullptr) {
-        delete child->widget();
-        delete child;
-    }
-    QLabel *header = new QLabel("<b>Menu for " + restaurantName + "</b>");
-    vbox->addWidget(header);
-    for (const QJsonValue &val : menu) {
-        QJsonObject obj = val.toObject();
-        QWidget *card = new QWidget;
-        QVBoxLayout *cardVbox = new QVBoxLayout(card);
-        cardVbox->addWidget(new QLabel("<b>" + obj["foodName"].toString() + "</b>"));
-        cardVbox->addWidget(new QLabel(obj["foodType"].toString()));
-        cardVbox->addWidget(new QLabel(obj["foodDetails"].toString()));
-        cardVbox->addWidget(new QLabel("Price: " + QString::number(obj["price"].toInt())));
-        QPushButton *orderBtn = new QPushButton("Order");
-        cardVbox->addWidget(orderBtn);
-        vbox->addWidget(card);
-        connect(orderBtn, &QPushButton::clicked, [this, obj, restaurantName]() {
-            orderFood(obj["id"].toInt(), restaurantName, obj["foodName"].toString());
+void customer::displayMenu(const QJsonArray &menu, const QString &restaurantName, int restaurantId) {
+    // Create popup dialog
+    QDialog* dialog = new QDialog(this);
+    dialog->setWindowTitle("Menu for " + restaurantName);
+    dialog->resize(600, 400);
+    QVBoxLayout* layout = new QVBoxLayout(dialog);
+    QTableWidget* table = new QTableWidget(dialog);
+    table->setColumnCount(5);
+    table->setHorizontalHeaderLabels({"Type", "Name", "Details", "Price", "Order"});
+    table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    table->setRowCount(menu.size());
+    for (int i = 0; i < menu.size(); ++i) {
+        QJsonObject item = menu[i].toObject();
+        table->setItem(i, 0, new QTableWidgetItem(item["foodType"].toString()));
+        table->setItem(i, 1, new QTableWidgetItem(item["foodName"].toString()));
+        table->setItem(i, 2, new QTableWidgetItem(item["foodDetails"].toString()));
+        table->setItem(i, 3, new QTableWidgetItem(QString::number(item["price"].toInt())));
+        QPushButton* orderBtn = new QPushButton("Order");
+        table->setCellWidget(i, 4, orderBtn);
+        connect(orderBtn, &QPushButton::clicked, this, [this, item, restaurantName, restaurantId, dialog]() {
+            orderFood(restaurantId, item["id"].toInt(), restaurantName, item["foodName"].toString(), item["price"].toInt());
+            // Optionally close dialog after ordering:
+            // dialog->accept();
         });
     }
-    // Add a back button to return to restaurant list
-    QPushButton *backBtn = new QPushButton("Back to Restaurants");
-    vbox->addWidget(backBtn);
-    connect(backBtn, &QPushButton::clicked, this, &customer::fetchAndDisplayRestaurants);
+    layout->addWidget(table);
+    dialog->setLayout(layout);
+    dialog->exec(); // Modal dialog
 }
 
 void customer::fetchAndDisplayRestaurants() {
@@ -409,16 +381,27 @@ void customer::fetchAndDisplayRestaurants() {
 void customer::fetchAndDisplayMenu(int restaurantId, const QString &restaurantName) {
     NetworkManager* netManager = NetworkManager::getInstance();
     disconnect(netManager, &NetworkManager::menuReceived, this, nullptr);
-    connect(netManager, &NetworkManager::menuReceived, this, [this, restaurantName](const QJsonArray &menu) {
-        displayMenu(menu, restaurantName);
+    connect(netManager, &NetworkManager::menuReceived, this, [this, restaurantName, restaurantId](const QJsonArray &menu) {
+        displayMenu(menu, restaurantName, restaurantId);
     });
     netManager->getRestaurantMenu(restaurantId);
 }
 
-void customer::orderFood(int foodId, const QString &restaurantName, const QString &foodName) {
-    // Show a dialog or send an order request using NetworkManager
-    QMessageBox::information(this, "Order", "Order placed for '" + foodName + "' at " + restaurantName);
-    // TODO: Implement actual order API call
+void customer::orderFood(int restaurantId, int foodId, const QString &restaurantName, const QString &foodName, int price) {
+    NetworkManager* netManager = NetworkManager::getInstance();
+    QJsonArray items;
+    QJsonObject itemObj;
+    itemObj["foodId"] = foodId;
+    itemObj["quantity"] = 1;
+    itemObj["price"] = price;
+    items.append(itemObj);
+    connect(netManager, &NetworkManager::orderCreated, this, [this, foodName, restaurantName](const QString &msg) {
+        QMessageBox::information(this, "Order Success", "Order placed for '" + foodName + "' at " + restaurantName + "\n" + msg);
+    });
+    connect(netManager, &NetworkManager::orderCreationFailed, this, [this](const QString &err) {
+        QMessageBox::warning(this, "Order Failed", "Order failed: " + err);
+    });
+    netManager->createOrder(currentUserId, restaurantId, items, price);
 }
 
 void customer::fetchAndDisplayOrders() {
