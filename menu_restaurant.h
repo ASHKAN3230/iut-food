@@ -110,6 +110,8 @@ private:
 
     void deleteMenuItem(const QString &foodType, const QString &foodName);
     void deleteMenuItemById(int id);
+
+    void checkPendingApplication(bool isAuth);
 };
 
 #endif // MENU_RESTAURANT_H

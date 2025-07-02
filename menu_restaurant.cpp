@@ -24,6 +24,8 @@
 #include <QNetworkReply>
 #include <QHBoxLayout>
 #include <QSizePolicy>
+#include <QNetworkAccessManager>
+#include <QNetworkRequest>
 
 menu_restaurant::menu_restaurant(const QString &username, int restaurantId, QWidget *parent)
     : QWidget(parent)
@@ -458,7 +460,9 @@ void menu_restaurant::setAuthWarningVisible(bool visible) {
 void menu_restaurant::updateAuthWarning(bool isAuth) {
     setAuthWarningVisible(!isAuth);
     if (ui && ui->applyAuthButton) {
-        ui->applyAuthButton->setVisible(!isAuth);
+        ui->applyAuthButton->setVisible(true);
+        ui->applyAuthButton->setEnabled(!isAuth);
+        ui->applyAuthButton->setText(isAuth ? "Authenticated" : "Apply authentication");
     }
 }
 
@@ -472,17 +476,80 @@ void menu_restaurant::fetchAndSetAuthWarning() {
         connect(manager, &QNetworkAccessManager::finished, this, [this, manager](QNetworkReply* reply) {
             QByteArray responseData = reply->readAll();
             QJsonDocument doc = QJsonDocument::fromJson(responseData);
+            bool isAuth = false;
             if (doc.isObject()) {
                 QJsonObject obj = doc.object();
                 if (obj.contains("isAuth")) {
-                    updateAuthWarning(obj["isAuth"].toBool());
+                    isAuth = obj["isAuth"].toBool();
                 }
             }
             reply->deleteLater();
             manager->deleteLater();
+            // After checking isAuth, check for pending application
+            checkPendingApplication(isAuth);
         });
         manager->get(request);
     }
+}
+
+void menu_restaurant::checkPendingApplication(bool isAuth) {
+    // If already authenticated, just update warning
+    if (isAuth) {
+        updateAuthWarning(true);
+        if (ui && ui->applyAuthButton) {
+            ui->applyAuthButton->setVisible(true);
+            ui->applyAuthButton->setEnabled(false);
+            ui->applyAuthButton->setText("Authenticated");
+        }
+        if (ui && ui->authWarningLabel) {
+            ui->authWarningLabel->setVisible(false);
+        }
+        return;
+    }
+    // Otherwise, check for pending application
+    NetworkManager* netManager = NetworkManager::getInstance();
+    QNetworkRequest request(QUrl(netManager->getServerUrl() + "/api/restaurants/pending-auth"));
+    QNetworkAccessManager* manager = new QNetworkAccessManager(this);
+    connect(manager, &QNetworkAccessManager::finished, this, [this, manager](QNetworkReply* reply) {
+        QByteArray responseData = reply->readAll();
+        QJsonDocument doc = QJsonDocument::fromJson(responseData);
+        bool hasPending = false;
+        if (doc.isArray()) {
+            QJsonArray arr = doc.array();
+            for (const QJsonValue& val : arr) {
+                QJsonObject obj = val.toObject();
+                if (obj["userId"].toInt() == currentRestaurantId) {
+                    hasPending = true;
+                    break;
+                }
+            }
+        }
+        if (ui && ui->applyAuthButton) {
+            ui->applyAuthButton->setVisible(true);
+        }
+        if (hasPending) {
+            if (ui && ui->applyAuthButton) {
+                ui->applyAuthButton->setEnabled(false);
+                ui->applyAuthButton->setText("Pending");
+            }
+            if (ui && ui->authWarningLabel) {
+                ui->authWarningLabel->setText("⚠ Your authentication is pending approval.");
+                ui->authWarningLabel->setVisible(true);
+            }
+        } else {
+            if (ui && ui->applyAuthButton) {
+                ui->applyAuthButton->setEnabled(true);
+                ui->applyAuthButton->setText("Apply authentication");
+            }
+            if (ui && ui->authWarningLabel) {
+                ui->authWarningLabel->setText("⚠ You are not authenticated. Please apply.");
+                ui->authWarningLabel->setVisible(true);
+            }
+        }
+        reply->deleteLater();
+        manager->deleteLater();
+    });
+    manager->get(request);
 }
 
 void menu_restaurant::on_applyAuthButton_clicked() {
