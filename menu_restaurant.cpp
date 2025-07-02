@@ -57,6 +57,7 @@ menu_restaurant::menu_restaurant(const QString &username, int restaurantId, QWid
     connect(ui->updateStatusButton, &QPushButton::clicked, this, &menu_restaurant::on_updateStatusButton_clicked);
     // Profile tab logic
     connect(ui->saveProfileButton, &QPushButton::clicked, this, &menu_restaurant::on_saveProfileButton_clicked);
+    disconnect(ui->applyAuthButton, &QPushButton::clicked, this, &menu_restaurant::on_applyAuthButton_clicked);
     connect(ui->applyAuthButton, &QPushButton::clicked, this, &menu_restaurant::on_applyAuthButton_clicked);
 
     socket.connectToHost("127.0.0.1",6006);
@@ -485,11 +486,17 @@ void menu_restaurant::fetchAndSetAuthWarning() {
 }
 
 void menu_restaurant::on_applyAuthButton_clicked() {
-    // Open the restaurant_auth window for authentication
+    static bool alreadyOpened = false;
+    if (alreadyOpened) return;
+    alreadyOpened = true;
+    ui->applyAuthButton->setEnabled(false); // Disable the button immediately
     restaurant_auth *authWindow = new restaurant_auth(currentRestaurantUsername);
     authWindow->setAttribute(Qt::WA_DeleteOnClose);
+    connect(authWindow, &QObject::destroyed, this, [this]() {
+        alreadyOpened = false;
+        ui->applyAuthButton->setEnabled(true);
+    });
     authWindow->show();
-    this->close();
 }
 
 void menu_restaurant::deleteMenuItemById(int id)
