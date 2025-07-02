@@ -21,6 +21,7 @@ restaurant_auth::restaurant_auth(const QString &username, QWidget *parent)
     currentRestaurantUsername = username;
     connect(ui->save_info_button, &QPushButton::clicked, this, &restaurant_auth::on_save_info_button_clicked);
     connect(NetworkManager::getInstance(), &NetworkManager::restaurantsReceived, this, &restaurant_auth::onRestaurantsReceived);
+    connect(NetworkManager::getInstance(), &NetworkManager::restaurantCreated, this, &restaurant_auth::onRestaurantCreated);
     check_restaurant_info_status();
     update_status_display();
 }
@@ -99,6 +100,7 @@ void restaurant_auth::onRestaurantCreated(bool success)
         infoExists = true;
         check_restaurant_info_status();
         update_status_display();
+        close();
     } else {
         ui->statusLabel->setText("Failed to save restaurant information on server.");
     }
