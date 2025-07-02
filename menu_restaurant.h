@@ -13,6 +13,14 @@ namespace Ui {
 class menu_restaurant;
 }
 
+struct MenuItemInfo {
+    int id;
+    QString foodType;
+    QString foodName;
+    QString foodDetails;
+    QString price;
+};
+
 class menu_restaurant : public QWidget
 {
     Q_OBJECT
@@ -45,7 +53,7 @@ public:
 
     QTcpSocket socket;
 
-    QMap<QString,QMap<QString,QPair<QString,QString>>> menu_list;
+    QMap<int, MenuItemInfo> menu_items; // id -> info
 
 signals:
 
@@ -57,8 +65,6 @@ public slots:
     void on_addFoodButton_clicked();
 
     void on_editFoodButton_clicked();
-
-    void on_deleteFoodButton_clicked();
 
     void on_clearFormButton_clicked();
 
@@ -101,6 +107,9 @@ private:
     void loadMenuFromServer();
     void loadOrdersFromServer();
     void fetchAndSetAuthWarning();
+
+    void deleteMenuItem(const QString &foodType, const QString &foodName);
+    void deleteMenuItemById(int id);
 };
 
 #endif // MENU_RESTAURANT_H

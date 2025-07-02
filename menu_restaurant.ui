@@ -175,13 +175,6 @@
             </widget>
            </item>
            <item>
-            <widget class="QPushButton" name="deleteFoodButton">
-             <property name="text">
-              <string>Delete</string>
-             </property>
-            </widget>
-           </item>
-           <item>
             <widget class="QPushButton" name="clearFormButton">
              <property name="text">
               <string>Clear</string>
@@ -198,7 +191,7 @@
           <number>0</number>
          </property>
          <property name="columnCount">
-          <number>4</number>
+          <number>5</number>
          </property>
          <property name="horizontalHeaderLabels" stdset="0">
           <stringlist>
@@ -206,8 +199,10 @@
            <string>Name</string>
            <string>Details</string>
            <string>Price</string>
+           <string>Delete</string>
           </stringlist>
          </property>
+         <column/>
          <column/>
          <column/>
          <column/>

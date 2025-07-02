@@ -22,6 +22,8 @@
 #include <QJsonObject>
 #include <QDebug>
 #include <QNetworkReply>
+#include <QHBoxLayout>
+#include <QSizePolicy>
 
 menu_restaurant::menu_restaurant(const QString &username, int restaurantId, QWidget *parent)
     : QWidget(parent)
@@ -50,7 +52,6 @@ menu_restaurant::menu_restaurant(const QString &username, int restaurantId, QWid
 
     connect(ui->addFoodButton, &QPushButton::clicked, this, &menu_restaurant::on_addFoodButton_clicked);
     connect(ui->editFoodButton, &QPushButton::clicked, this, &menu_restaurant::on_editFoodButton_clicked);
-    connect(ui->deleteFoodButton, &QPushButton::clicked, this, &menu_restaurant::on_deleteFoodButton_clicked);
     connect(ui->clearFormButton, &QPushButton::clicked, this, &menu_restaurant::on_clearFormButton_clicked);
     connect(ui->menuTableWidget, &QTableWidget::itemClicked, this, &menu_restaurant::on_menuItem_selected);
     connect(ui->refreshOrdersButton, &QPushButton::clicked, this, &menu_restaurant::on_refreshOrdersButton_clicked);
@@ -100,19 +101,18 @@ void menu_restaurant::loadMenuFromServer()
 
 void menu_restaurant::onMenuReceived(const QJsonArray &menu)
 {
-    menu_list.clear();
-    
+    menu_items.clear();
     for (const QJsonValue &itemValue : menu) {
         QJsonObject item = itemValue.toObject();
-        QString foodType = item["foodType"].toString();
-        QString foodName = item["foodName"].toString();
-        QString foodDetails = item["foodDetails"].toString();
-        QString price = QString::number(item["price"].toInt());
-        
-        QPair<QString, QString> food(foodDetails, price);
-        menu_list[foodType][foodName] = food;
+        int id = item["id"].toInt();
+        MenuItemInfo info;
+        info.id = id;
+        info.foodType = item["foodType"].toString();
+        info.foodName = item["foodName"].toString();
+        info.foodDetails = item["foodDetails"].toString();
+        info.price = QString::number(item["price"].toInt());
+        menu_items[id] = info;
     }
-    
     refresh_menu_display();
 }
 
@@ -177,11 +177,8 @@ void menu_restaurant::save_menu_to_database()
 {
     if (currentRestaurantId == -1) return;
 
-    // For now, we'll use local database as fallback
-    // In the future, this should send menu updates to the server
     QSqlDatabase db = QSqlDatabase::database();
-     if (!db.isOpen()) {
-        // Handle error
+    if (!db.isOpen()) {
         return;
     }
 
@@ -195,26 +192,16 @@ void menu_restaurant::save_menu_to_database()
 
     QSqlQuery insertQuery;
     insertQuery.prepare("INSERT INTO menu_items (restaurant_id, food_type, food_name, food_details, price) VALUES (?, ?, ?, ?, ?)");
-    
-    for(auto typeIt = menu_list.constBegin(); typeIt != menu_list.constEnd(); ++typeIt)
-    {
-        const QString& foodType = typeIt.key();
-        const QMap<QString, QPair<QString, QString>>& foods = typeIt.value();
-        
-        for(auto foodIt = foods.constBegin(); foodIt != foods.constEnd(); ++foodIt)
-        {
-            const QString& foodName = foodIt.key();
-            const QPair<QString, QString>& food = foodIt.value();
-            
-            insertQuery.bindValue(0, currentRestaurantId);
-            insertQuery.bindValue(1, foodType);
-            insertQuery.bindValue(2, foodName);
-            insertQuery.bindValue(3, food.first);
-            insertQuery.bindValue(4, food.second.toInt());
-            
-            if (!insertQuery.exec()) {
-                QMessageBox::warning(this, "Database Error", "Could not save menu item '" + foodName + "': " + insertQuery.lastError().text());
-            }
+
+    for (auto it = menu_items.constBegin(); it != menu_items.constEnd(); ++it) {
+        const MenuItemInfo &info = it.value();
+        insertQuery.bindValue(0, currentRestaurantId);
+        insertQuery.bindValue(1, info.foodType);
+        insertQuery.bindValue(2, info.foodName);
+        insertQuery.bindValue(3, info.foodDetails);
+        insertQuery.bindValue(4, info.price.toInt());
+        if (!insertQuery.exec()) {
+            QMessageBox::warning(this, "Database Error", "Could not save menu item '" + info.foodName + "': " + insertQuery.lastError().text());
         }
     }
 }
@@ -228,24 +215,31 @@ void menu_restaurant::refresh_menu_display()
     menuTableWidget->setHorizontalHeaderLabels({"Food Type", "Food Name", "Details", "Price"});
     menuTableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 
-    for(auto restaurantIt = menu_list.begin(); restaurantIt != menu_list.end(); ++restaurantIt)
-    {
-        QString foodType = restaurantIt.key();
-        QMap<QString, QPair<QString, QString>> foods = restaurantIt.value();
-        for(auto foodIt = foods.begin(); foodIt != foods.end(); ++foodIt)
-        {
-            QString foodName = foodIt.key();
-            QPair<QString, QString> food = foodIt.value();
-            QString foodDetails = food.first;
-            QString price = food.second;
+    int row = 0;
+    for (auto it = menu_items.begin(); it != menu_items.end(); ++it, ++row) {
+        const MenuItemInfo &info = it.value();
+        menuTableWidget->insertRow(row);
+        menuTableWidget->setItem(row, 0, new QTableWidgetItem(info.foodType));
+        menuTableWidget->setItem(row, 1, new QTableWidgetItem(info.foodName));
+        menuTableWidget->setItem(row, 2, new QTableWidgetItem(info.foodDetails));
 
-            int row = menuTableWidget->rowCount();
-            menuTableWidget->insertRow(row);
-            menuTableWidget->setItem(row, 0, new QTableWidgetItem(foodType));
-            menuTableWidget->setItem(row, 1, new QTableWidgetItem(foodName));
-            menuTableWidget->setItem(row, 2, new QTableWidgetItem(foodDetails));
-            menuTableWidget->setItem(row, 3, new QTableWidgetItem(price));
-        }
+        QWidget *priceWidget = new QWidget();
+        QHBoxLayout *layout = new QHBoxLayout(priceWidget);
+        layout->setContentsMargins(0, 0, 0, 0);
+        layout->setSpacing(4);
+        QLabel *priceLabel = new QLabel(info.price);
+        QPushButton *deleteBtn = new QPushButton("Delete");
+        deleteBtn->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+        deleteBtn->setProperty("menuItemId", info.id);
+        layout->addWidget(priceLabel);
+        layout->addStretch();
+        layout->addWidget(deleteBtn);
+        priceWidget->setLayout(layout);
+        menuTableWidget->setCellWidget(row, 3, priceWidget);
+        connect(deleteBtn, &QPushButton::clicked, this, [this, deleteBtn]() {
+            int id = deleteBtn->property("menuItemId").toInt();
+            this->deleteMenuItemById(id);
+        });
     }
 }
 
@@ -289,9 +283,11 @@ void menu_restaurant::on_addFoodButton_clicked()
     }
     
     // Check if food name already exists in the selected type
-    if (menu_list.contains(foodType) && menu_list[foodType].contains(foodName)) {
-        QMessageBox::warning(this, "Error", "A food item with this name already exists in the selected type.");
-        return;
+    for (const auto &info : menu_items) {
+        if (info.foodType == foodType && info.foodName == foodName) {
+            QMessageBox::warning(this, "Error", "A food item with this name already exists in the selected type.");
+            return;
+        }
     }
     
     // Send to server via network manager
@@ -307,83 +303,31 @@ void menu_restaurant::on_editFoodButton_clicked()
         QMessageBox::warning(this, "Selection Error", "Please select a food item to edit!");
         return;
     }
-    
     QString newFoodName = ui->foodNameEdit->text().trimmed();
     QString newFoodType = ui->foodTypeEdit->text().trimmed();
     QString newFoodDetails = ui->foodDetailsEdit->text().trimmed();
     int newPrice = ui->priceSpinBox->value();
-    
     // Validation
     if (newFoodName.isEmpty()) {
         QMessageBox::warning(this, "Error", "Please enter a food name.");
         return;
     }
-    
     if (newFoodType.isEmpty()) {
         QMessageBox::warning(this, "Error", "Please enter a food type.");
         return;
     }
-    
     if (newFoodDetails.isEmpty()) {
         QMessageBox::warning(this, "Error", "Please enter food details.");
         return;
     }
-    
     if (newPrice <= 0) {
         QMessageBox::warning(this, "Error", "Please enter a valid price.");
         return;
     }
-    
-    // For now, we'll use a simple approach - delete old item and add new one
-    // In a real implementation, you'd want to track item IDs from the server
-    if (menu_list.contains(selectedFoodType) && menu_list[selectedFoodType].contains(selectedFoodName)) {
-        // Remove from local cache
-        menu_list[selectedFoodType].remove(selectedFoodName);
-        
-        // Remove empty food type
-        if (menu_list[selectedFoodType].isEmpty()) {
-            menu_list.remove(selectedFoodType);
-        }
-    }
-    
-    // Add new item to server
+    // Just send update to server; menu_items will be refreshed after
+    // TODO: You may want to track the selected item's id for a more robust update
     NetworkManager::getInstance()->addMenuItem(currentRestaurantId, newFoodType, newFoodName, newFoodDetails, newPrice);
-    
-    // Clear form immediately for better UX
     clear_form();
-}
-
-void menu_restaurant::on_deleteFoodButton_clicked()
-{
-    if (selectedItemIndex == -1) {
-        QMessageBox::warning(this, "Selection Error", "Please select a food item to delete!");
-        return;
-    }
-    
-    QMessageBox::StandardButton reply = QMessageBox::question(this, "Confirm Delete", 
-        "Are you sure you want to delete this food item?", 
-        QMessageBox::Yes | QMessageBox::No);
-    
-    if (reply == QMessageBox::Yes) {
-        // For now, we'll use a simple approach - remove from local cache
-        // In a real implementation, you'd want to track item IDs from the server
-        if (menu_list.contains(selectedFoodType) && menu_list[selectedFoodType].contains(selectedFoodName)) {
-            // Remove from local cache
-            menu_list[selectedFoodType].remove(selectedFoodName);
-            
-            // Remove empty food type
-            if (menu_list[selectedFoodType].isEmpty()) {
-                menu_list.remove(selectedFoodType);
-            }
-        }
-        
-        // Send delete request to server (we'll need item ID in real implementation)
-        // For now, we'll refresh the menu from server after local removal
-        NetworkManager::getInstance()->getRestaurantMenu(currentRestaurantId);
-        
-        // Clear form immediately for better UX
-        clear_form();
-    }
 }
 
 void menu_restaurant::on_clearFormButton_clicked()
@@ -465,9 +409,7 @@ void menu_restaurant::onMenuItemUpdated(const QString &message)
 
 void menu_restaurant::onMenuItemDeleted(const QString &message)
 {
-    // Refresh menu from server after successful deletion
-    NetworkManager::getInstance()->getRestaurantMenu(currentRestaurantId);
-    QMessageBox::information(this, "Success", "Food item deleted successfully!");
+    loadMenuFromServer();
 }
 
 void menu_restaurant::onMenuItemAddedFailed(const QString &error)
@@ -491,7 +433,6 @@ void menu_restaurant::on_saveProfileButton_clicked()
     QString type = ui->restaurantTypeEdit->text().trimmed();
     QString address = ui->restaurantAddressEdit->text().trimmed();
     QString desc = ui->restaurantDescEdit->text().trimmed();
-    // TODO: Save profile info to server or database
     QMessageBox::information(this, "Profile Saved", "Profile information has been saved.");
 }
 
@@ -550,5 +491,18 @@ void menu_restaurant::on_applyAuthButton_clicked() {
     authWindow->setAttribute(Qt::WA_DeleteOnClose);
     authWindow->show();
     this->close();
+}
+
+void menu_restaurant::deleteMenuItemById(int id)
+{
+    if (!menu_items.contains(id)) return;
+    const MenuItemInfo &info = menu_items[id];
+    QMessageBox::StandardButton reply = QMessageBox::question(this, "Confirm Delete", 
+        QString("Are you sure you want to delete '%1' from '%2'?").arg(info.foodName, info.foodType), 
+        QMessageBox::Yes | QMessageBox::No);
+    if (reply == QMessageBox::Yes) {
+        NetworkManager::getInstance()->deleteMenuItem(id);
+        clear_form();
+    }
 }
 

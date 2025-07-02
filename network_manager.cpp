@@ -167,6 +167,8 @@ void NetworkManager::sendRequest(const QString &endpoint, const QString &method,
         QByteArray jsonData = doc.toJson();
         request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
         reply = networkManager->put(request, jsonData);
+    } else if (method == "DELETE") {
+        reply = networkManager->deleteResource(request);
     }
     
     if (reply) {
