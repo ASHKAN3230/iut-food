@@ -80,20 +80,26 @@ void sign_in::on_sign_in_button_clicked()
 {
     QString username_line = ui->username_lineedit->text();
     QString password_line = ui->password_lineedit->text();
+    QString confirm_password_line = ui->confirm_password_lineedit->text();
     QString userType;
-    if(ui->manager_radiobutton->isChecked()) {
+    if(ui->manager_radiobutton && ui->manager_radiobutton->isChecked()) {
         userType = "manager";
-    } else if(ui->customer_radiobutton->isChecked()) {
+    } else if(ui->customer_radiobutton && ui->customer_radiobutton->isChecked()) {
         userType = "customer";
     } else if(ui->restaurant_radiobutton && ui->restaurant_radiobutton->isChecked()) {
         userType = "restaurant";
     } else {
-        QMessageBox::warning(this, "fail", "Please select a user type");
+        QMessageBox::warning(this, "Input Error", "Please select a user type");
         return;
     }
 
-    if (username_line.isEmpty() || password_line.isEmpty()) {
-        QMessageBox::warning(this, "Input Error", "Please enter both username and password");
+    if (username_line.isEmpty() || password_line.isEmpty() || confirm_password_line.isEmpty()) {
+        QMessageBox::warning(this, "Input Error", "Please enter username, password, and confirm password");
+        return;
+    }
+
+    if (password_line != confirm_password_line) {
+        QMessageBox::warning(this, "Input Error", "Passwords do not match");
         return;
     }
 
