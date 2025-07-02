@@ -34,15 +34,14 @@ menu_restaurant::menu_restaurant(const QString &username, int restaurantId, QWid
     ui->setupUi(this);
     currentRestaurantUsername = username;
 
-    // Connect network manager signals
+    // Disconnect all previous NetworkManager signal connections to this before connecting new ones in the menu_restaurant constructor
     NetworkManager* netManager = NetworkManager::getInstance();
+    disconnect(netManager, nullptr, this, nullptr);
     connect(netManager, &NetworkManager::menuReceived, this, &menu_restaurant::onMenuReceived);
     connect(netManager, &NetworkManager::orderCreated, this, &menu_restaurant::onOrderCreated);
     connect(netManager, &NetworkManager::ordersReceived, this, &menu_restaurant::onOrdersReceived);
     connect(netManager, &NetworkManager::orderStatusUpdated, this, &menu_restaurant::onOrderStatusUpdated);
     connect(netManager, &NetworkManager::networkError, this, &menu_restaurant::onNetworkError);
-    
-    // Connect menu operation signals
     connect(netManager, &NetworkManager::menuItemAdded, this, &menu_restaurant::onMenuItemAdded);
     connect(netManager, &NetworkManager::menuItemAddedFailed, this, &menu_restaurant::onMenuItemAddedFailed);
     connect(netManager, &NetworkManager::menuItemUpdated, this, &menu_restaurant::onMenuItemUpdated);

@@ -16,7 +16,7 @@ MainWindow::MainWindow(QWidget *parent)
     setFixedSize(400, 500);
     // Connect network manager signals
     NetworkManager* netManager = NetworkManager::getInstance();
-    connect(netManager, &NetworkManager::loginSuccess, this, &MainWindow::onLoginSuccess);
+    connect(netManager, &NetworkManager::loginSuccess, this, &MainWindow::onLoginSuccess, Qt::UniqueConnection);
     connect(netManager, &NetworkManager::loginFailed, this, &MainWindow::onLoginFailed);
     connect(netManager, &NetworkManager::networkError, this, &MainWindow::onNetworkError);
     // Check server health on startup
@@ -85,6 +85,7 @@ void MainWindow::on_login_button_clicked()
 
 void MainWindow::onLoginSuccess(const QJsonObject &userInfo)
 {
+    qDebug() << "onLoginSuccess called";
     QString username = userInfo["username"].toString();
     QString userType = userInfo["userType"].toString();
     int userId = userInfo["id"].toInt();
@@ -95,25 +96,31 @@ void MainWindow::onLoginSuccess(const QJsonObject &userInfo)
         customer *person = new customer(username, userId);
         person->setAttribute(Qt::WA_DeleteOnClose);
         person->showMaximized();
+        NetworkManager* netManager = NetworkManager::getInstance();
+        disconnect(netManager, nullptr, this, nullptr);
         this->close();
     } else if (userType == "manager") {
         menu_restaurant *mr = new menu_restaurant(username, -1);
         mr->setAttribute(Qt::WA_DeleteOnClose);
         mr->showMaximized();
+        NetworkManager* netManager = NetworkManager::getInstance();
+        disconnect(netManager, nullptr, this, nullptr);
         this->close();
     } else if (userType == "restaurant") {
         int restaurantId = userInfo["restaurantId"].toInt();
         if (restaurantId > 0) {
-            // Restaurant has setup, go to menu management
             menu_restaurant *mr = new menu_restaurant(username, restaurantId);
             mr->setAttribute(Qt::WA_DeleteOnClose);
             mr->showMaximized();
+            NetworkManager* netManager = NetworkManager::getInstance();
+            disconnect(netManager, nullptr, this, nullptr);
             this->close();
         } else {
-            // Restaurant needs setup
             restaurant_auth *ra = new restaurant_auth(username);
             ra->setAttribute(Qt::WA_DeleteOnClose);
             ra->showMaximized();
+            NetworkManager* netManager = NetworkManager::getInstance();
+            disconnect(netManager, nullptr, this, nullptr);
             this->close();
         }
     }
