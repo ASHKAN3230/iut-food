@@ -23,6 +23,7 @@
 #include <QHBoxLayout>
 #include <QTabWidget>
 #include <QComboBox>
+#include <QDebug>
 
 customer::customer(const QString &username, int userId, QWidget *parent)
     : QWidget(parent)
@@ -463,25 +464,40 @@ void customer::populateOrderTables(const QJsonArray &orders) {
     completedTable->setRowCount(0);
     for (const QJsonValue &val : orders) {
         QJsonObject obj = val.toObject();
+        qDebug() << "Order object:" << obj; // DEBUG PRINT
         QString status = obj["status"].toString().toLower();
         bool isCompleted = (status == "completed" || status == "cancelled");
         QTableWidget *table = isCompleted ? completedTable : currentTable;
         int row = table->rowCount();
         table->insertRow(row);
-        table->setItem(row, 0, new QTableWidgetItem(QString::number(obj["id"].toInt())));
-        table->setItem(row, 1, new QTableWidgetItem(obj["createdAt"].toString()));
-        table->setItem(row, 2, new QTableWidgetItem(obj["status"].toString()));
-        table->setItem(row, 3, new QTableWidgetItem(QString::number(obj["totalAmount"].toInt())));
+        QString orderIdText = QString("Order #%1").arg(obj["id"].toInt());
+        QString dateText = obj["createdAt"].toString();
+        QString restaurantText;
+        if (obj.contains("restaurantName") && !obj["restaurantName"].toString().isEmpty()) {
+            restaurantText = obj["restaurantName"].toString();
+        } else if (obj.contains("restaurantId")) {
+            restaurantText = QString("Restaurant #%1").arg(obj["restaurantId"].toInt());
+        } else {
+            restaurantText = "Unknown";
+        }
+        QString statusText = obj["status"].toString();
+        if (!statusText.isEmpty()) statusText[0] = statusText[0].toUpper();
+        QString priceText = QString("%1 Taka").arg(obj["totalAmount"].toInt());
+        table->setItem(row, 0, new QTableWidgetItem(orderIdText));
+        table->setItem(row, 1, new QTableWidgetItem(dateText));
+        table->setItem(row, 2, new QTableWidgetItem(restaurantText));
+        table->setItem(row, 3, new QTableWidgetItem(statusText));
+        table->setItem(row, 4, new QTableWidgetItem(priceText));
         if (isCompleted) {
             QPushButton *detailsBtn = new QPushButton("Details");
-            table->setCellWidget(row, 4, detailsBtn);
+            table->setCellWidget(row, 5, detailsBtn);
             QJsonObject orderCopy = obj;
             connect(detailsBtn, &QPushButton::clicked, this, [this, orderCopy]() {
                 showOrderDetails(orderCopy);
             });
         } else {
             QPushButton *deleteBtn = new QPushButton("Delete");
-            table->setCellWidget(row, 4, deleteBtn);
+            table->setCellWidget(row, 5, deleteBtn);
             int orderId = obj["id"].toInt();
             connect(deleteBtn, &QPushButton::clicked, this, [this, orderId]() {
                 if (QMessageBox::question(this, "Delete Order", "Are you sure you want to delete this order?") == QMessageBox::Yes) {
@@ -498,6 +514,17 @@ void customer::populateOrderTables(const QJsonArray &orders) {
             });
         }
     }
+    // After populating all rows, stretch columns and resize to contents
+    for (int col = 0; col < currentTable->columnCount(); ++col) {
+        currentTable->horizontalHeader()->setSectionResizeMode(col, QHeaderView::Stretch);
+    }
+    currentTable->resizeColumnsToContents();
+    for (int col = 0; col < completedTable->columnCount(); ++col) {
+        completedTable->horizontalHeader()->setSectionResizeMode(col, QHeaderView::Stretch);
+    }
+    completedTable->resizeColumnsToContents();
+    currentTable->setMinimumWidth(700);
+    completedTable->setMinimumWidth(700);
 }
 
 void customer::showOrderDetails(const QJsonObject &order) {

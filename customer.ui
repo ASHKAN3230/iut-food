@@ -107,17 +107,19 @@
           <item>
            <widget class="QTableWidget" name="currentOrdersTableWidget">
             <property name="columnCount">
-             <number>5</number>
+             <number>6</number>
             </property>
             <property name="horizontalHeaderLabels" stdset="0">
              <stringlist>
-              <string>ID</string>
+              <string>Order</string>
               <string>Date</string>
+              <string>Restaurant</string>
               <string>Status</string>
-              <string>Total</string>
-              <string>Details</string>
+              <string>Price</string>
+              <string>Delete</string>
              </stringlist>
             </property>
+            <column/>
             <column/>
             <column/>
             <column/>
@@ -137,17 +139,19 @@
           <item>
            <widget class="QTableWidget" name="completedOrdersTableWidget">
             <property name="columnCount">
-             <number>5</number>
+             <number>6</number>
             </property>
             <property name="horizontalHeaderLabels" stdset="0">
              <stringlist>
-              <string>ID</string>
+              <string>Order</string>
               <string>Date</string>
+              <string>Restaurant</string>
               <string>Status</string>
-              <string>Total</string>
+              <string>Price</string>
               <string>Details</string>
              </stringlist>
             </property>
+            <column/>
             <column/>
             <column/>
             <column/>
