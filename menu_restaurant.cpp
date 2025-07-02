@@ -107,7 +107,7 @@ void menu_restaurant::onMenuReceived(const QJsonArray &menu)
         QString foodType = item["foodType"].toString();
         QString foodName = item["foodName"].toString();
         QString foodDetails = item["foodDetails"].toString();
-        QString price = item["price"].toString();
+        QString price = QString::number(item["price"].toInt());
         
         QPair<QString, QString> food(foodDetails, price);
         menu_list[foodType][foodName] = food;
