@@ -21,14 +21,22 @@
 #include <QSizePolicy>
 #include <QGridLayout>
 #include <QHBoxLayout>
+#include <QTabWidget>
 
-customer::customer(const QString &username, QWidget *parent)
+customer::customer(const QString &username, int userId, QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::customer)
 {
     ui->setupUi(this);
     currentUsername = username;
+    currentUserId = userId;
     fetchAndDisplayRestaurants();
+    // Connect tab change to fetch orders
+    connect(ui->tabWidget, &QTabWidget::currentChanged, this, [this](int idx) {
+        if (ui->tabWidget->widget(idx)->objectName() == "ordersTab") {
+            fetchAndDisplayOrders();
+        }
+    });
 
     connect(this, &customer::click_search_button, this, &customer::send_message);
 
@@ -375,4 +383,25 @@ void customer::orderFood(int foodId, const QString &restaurantName, const QStrin
     // Show a dialog or send an order request using NetworkManager
     QMessageBox::information(this, "Order", "Order placed for '" + foodName + "' at " + restaurantName);
     // TODO: Implement actual order API call
+}
+
+void customer::fetchAndDisplayOrders() {
+    if (currentUserId <= 0) return;
+    NetworkManager* netManager = NetworkManager::getInstance();
+    connect(netManager, &NetworkManager::ordersReceived, this, &customer::displayOrders, Qt::UniqueConnection);
+    netManager->getOrders(QString::number(currentUserId), "customer");
+}
+
+void customer::displayOrders(const QJsonArray &orders) {
+    QTableWidget *ordersTable = ui->ordersTableWidget;
+    ordersTable->setRowCount(0);
+    for (const QJsonValue &val : orders) {
+        QJsonObject obj = val.toObject();
+        int row = ordersTable->rowCount();
+        ordersTable->insertRow(row);
+        ordersTable->setItem(row, 0, new QTableWidgetItem(QString::number(obj["id"].toInt())));
+        ordersTable->setItem(row, 1, new QTableWidgetItem(obj["createdAt"].toString()));
+        ordersTable->setItem(row, 2, new QTableWidgetItem(obj["status"].toString()));
+        ordersTable->setItem(row, 3, new QTableWidgetItem(QString::number(obj["totalAmount"].toInt())));
+    }
 }

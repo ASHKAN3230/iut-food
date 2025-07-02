@@ -92,7 +92,7 @@ void MainWindow::onLoginSuccess(const QJsonObject &userInfo)
     qDebug() << "Login successful for user:" << username << "Type:" << userType;
     
     if (userType == "customer") {
-        customer *person = new customer(username);
+        customer *person = new customer(username, userId);
         person->setAttribute(Qt::WA_DeleteOnClose);
         person->showMaximized();
         this->close();

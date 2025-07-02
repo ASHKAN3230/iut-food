@@ -20,7 +20,7 @@ class customer : public QWidget
     Q_OBJECT
 
 public:
-    explicit customer(const QString &username, QWidget *parent = nullptr);
+    explicit customer(const QString &username, int userId, QWidget *parent = nullptr);
 
     void click_search_button();
 
@@ -44,6 +44,8 @@ public:
     void displayRestaurants(const QJsonArray &restaurants);
     void displayMenu(const QJsonArray &menu, const QString &restaurantName);
     void orderFood(int foodId, const QString &restaurantName, const QString &foodName);
+    void fetchAndDisplayOrders();
+    void displayOrders(const QJsonArray &orders);
 
 signals:
 
@@ -66,6 +68,7 @@ public slots:
 private:
     Ui::customer *ui;
     QString currentUsername;
+    int currentUserId = -1;
 };
 
 #endif // CUSTOMER_H
