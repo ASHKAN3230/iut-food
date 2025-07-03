@@ -26,7 +26,7 @@ class menu_restaurant : public QWidget
     Q_OBJECT
 
 public:
-    explicit menu_restaurant(const QString &username, int restaurantId = -1, QWidget *parent = nullptr);
+    explicit menu_restaurant(const QString &username, int restaurantId = -1, int userId = -1, QWidget *parent = nullptr);
     ~menu_restaurant();
 
     void click_back_button();
@@ -94,6 +94,10 @@ public slots:
     void updateAuthWarning(bool isAuth);
     void on_applyAuthButton_clicked();
 
+protected:
+    void changeEvent(QEvent *event) override;
+    void focusInEvent(QFocusEvent *event) override;
+
 private:
     Ui::menu_restaurant *ui;
     QString selectedFoodType;
@@ -101,6 +105,7 @@ private:
     int selectedItemIndex;
     QString currentRestaurantUsername;
     int currentRestaurantId;
+    int currentUserId;
     
     // Network manager methods
     void getRestaurantInfo();

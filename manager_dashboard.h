@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include <QTableWidget>
+#include <QLabel>
 
 namespace Ui {
 class manager_dashboard;
@@ -27,6 +28,7 @@ private:
     QTableWidget *usersTable = nullptr;
     QTableWidget *authAppsTable = nullptr;
     QTableWidget *ordersTable = nullptr;
+    QLabel *summaryLabel = nullptr;
 
 private slots:
     void onRestaurantsReceived(const QJsonArray &restaurants);

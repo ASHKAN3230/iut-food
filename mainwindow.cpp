@@ -110,7 +110,7 @@ void MainWindow::onLoginSuccess(const QJsonObject &userInfo)
     } else if (userType == "restaurant") {
         int restaurantId = userInfo["restaurantId"].toInt();
         if (restaurantId > 0) {
-            menu_restaurant *mr = new menu_restaurant(username, restaurantId);
+            menu_restaurant *mr = new menu_restaurant(username, restaurantId, userId);
             mr->setAttribute(Qt::WA_DeleteOnClose);
             mr->showMaximized();
             NetworkManager* netManager = NetworkManager::getInstance();

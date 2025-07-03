@@ -53,6 +53,9 @@ public:
     void getPendingAuthApplications();
     void getAllOrdersAndUsers();
 
+    void approveAuthApplication(int applicationId);
+    void denyAuthApplication(int applicationId);
+
 signals:
     // Authentication signals
     void loginSuccess(const QJsonObject &userInfo);
@@ -89,6 +92,10 @@ signals:
 
     void pendingAuthApplicationsReceived(const QJsonArray &apps);
     void allOrdersAndUsersReceived(const QJsonObject &data);
+
+    void authApplicationApproved(const QString &message);
+    void authApplicationDenied(const QString &message);
+    void authApplicationFailed(const QString &error);
 
 private:
     NetworkManager(QObject *parent = nullptr);

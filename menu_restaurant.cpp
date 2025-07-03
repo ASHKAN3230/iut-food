@@ -26,12 +26,15 @@
 #include <QSizePolicy>
 #include <QNetworkAccessManager>
 #include <QNetworkRequest>
+#include <QEvent>
+#include <QFocusEvent>
 
-menu_restaurant::menu_restaurant(const QString &username, int restaurantId, QWidget *parent)
+menu_restaurant::menu_restaurant(const QString &username, int restaurantId, int userId, QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::menu_restaurant)
     , selectedItemIndex(-1)
     , currentRestaurantId(restaurantId)
+    , currentUserId(userId)
 {
     ui->setupUi(this);
     currentRestaurantUsername = username;
@@ -452,12 +455,14 @@ void menu_restaurant::populate_orders_table()
 void menu_restaurant::send_message() {}
 
 void menu_restaurant::setAuthWarningVisible(bool visible) {
-    if (ui && ui->authWarningLabel) {
-        ui->authWarningLabel->setVisible(visible);
+    qDebug() << "setAuthWarningVisible called with" << visible;
+    if (ui && ui->authWarningContainer) {
+        ui->authWarningContainer->setVisible(visible);
     }
 }
 
 void menu_restaurant::updateAuthWarning(bool isAuth) {
+    qDebug() << "updateAuthWarning called with isAuth=" << isAuth;
     setAuthWarningVisible(!isAuth);
     if (ui && ui->applyAuthButton) {
         ui->applyAuthButton->setVisible(true);
@@ -467,14 +472,14 @@ void menu_restaurant::updateAuthWarning(bool isAuth) {
 }
 
 void menu_restaurant::fetchAndSetAuthWarning() {
-    // Fetch user info from server and update auth warning
+    qDebug() << "fetchAndSetAuthWarning called, currentUserId=" << currentUserId;
     NetworkManager* netManager = NetworkManager::getInstance();
-    // Assume currentRestaurantId is the user id for restaurant users
-    if (currentRestaurantId > 0) {
-        QNetworkRequest request(QUrl(netManager->getServerUrl() + "/api/users/" + QString::number(currentRestaurantId)));
+    if (currentUserId > 0) {
+        QNetworkRequest request(QUrl(netManager->getServerUrl() + "/api/users/" + QString::number(currentUserId)));
         QNetworkAccessManager* manager = new QNetworkAccessManager(this);
         connect(manager, &QNetworkAccessManager::finished, this, [this, manager](QNetworkReply* reply) {
             QByteArray responseData = reply->readAll();
+            qDebug() << "User info reply received:" << responseData;
             QJsonDocument doc = QJsonDocument::fromJson(responseData);
             bool isAuth = false;
             if (doc.isObject()) {
@@ -483,35 +488,33 @@ void menu_restaurant::fetchAndSetAuthWarning() {
                     isAuth = obj["isAuth"].toBool();
                 }
             }
+            qDebug() << "Parsed isAuth value:" << isAuth;
             reply->deleteLater();
             manager->deleteLater();
-            // After checking isAuth, check for pending application
             checkPendingApplication(isAuth);
         });
         manager->get(request);
+    } else {
+        qDebug() << "fetchAndSetAuthWarning: currentUserId <= 0, skipping.";
     }
 }
 
 void menu_restaurant::checkPendingApplication(bool isAuth) {
-    // If already authenticated, just update warning
+    qDebug() << "checkPendingApplication called with isAuth=" << isAuth << ", currentRestaurantId=" << currentRestaurantId;
     if (isAuth) {
-        updateAuthWarning(true);
+        qDebug() << "User is authenticated, hiding warning label.";
+        setAuthWarningVisible(false);
         if (ui && ui->applyAuthButton) {
-            ui->applyAuthButton->setVisible(true);
-            ui->applyAuthButton->setEnabled(false);
-            ui->applyAuthButton->setText("Authenticated");
-        }
-        if (ui && ui->authWarningLabel) {
-            ui->authWarningLabel->setVisible(false);
+            ui->applyAuthButton->setVisible(false);
         }
         return;
     }
-    // Otherwise, check for pending application
     NetworkManager* netManager = NetworkManager::getInstance();
     QNetworkRequest request(QUrl(netManager->getServerUrl() + "/api/restaurants/pending-auth"));
     QNetworkAccessManager* manager = new QNetworkAccessManager(this);
     connect(manager, &QNetworkAccessManager::finished, this, [this, manager](QNetworkReply* reply) {
         QByteArray responseData = reply->readAll();
+        qDebug() << "Pending auth reply received:" << responseData;
         QJsonDocument doc = QJsonDocument::fromJson(responseData);
         bool hasPending = false;
         if (doc.isArray()) {
@@ -577,5 +580,19 @@ void menu_restaurant::deleteMenuItemById(int id)
         NetworkManager::getInstance()->deleteMenuItem(id);
         clear_form();
     }
+}
+
+void menu_restaurant::changeEvent(QEvent *event)
+{
+    QWidget::changeEvent(event);
+    if (event->type() == QEvent::ActivationChange && isActiveWindow()) {
+        fetchAndSetAuthWarning();
+    }
+}
+
+void menu_restaurant::focusInEvent(QFocusEvent *event)
+{
+    QWidget::focusInEvent(event);
+    fetchAndSetAuthWarning();
 }
 

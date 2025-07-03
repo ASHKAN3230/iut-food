@@ -6,6 +6,7 @@
 #include <QTableWidget>
 #include <QPushButton>
 #include <QHeaderView>
+#include <QMessageBox>
 
 manager_dashboard::manager_dashboard(const QString &username, QWidget *parent)
     : QWidget(parent)
@@ -22,6 +23,17 @@ manager_dashboard::manager_dashboard(const QString &username, QWidget *parent)
     connect(NetworkManager::getInstance(), &NetworkManager::restaurantsReceived, this, &manager_dashboard::onRestaurantsReceived);
     connect(NetworkManager::getInstance(), &NetworkManager::pendingAuthApplicationsReceived, this, &manager_dashboard::onPendingAuthApplicationsReceived);
     connect(NetworkManager::getInstance(), &NetworkManager::allOrdersAndUsersReceived, this, &manager_dashboard::onAllOrdersAndUsersReceived);
+    connect(NetworkManager::getInstance(), &NetworkManager::authApplicationApproved, this, [this](const QString &msg) {
+        QMessageBox::information(this, "Approved", msg);
+        NetworkManager::getInstance()->getPendingAuthApplications();
+    });
+    connect(NetworkManager::getInstance(), &NetworkManager::authApplicationDenied, this, [this](const QString &msg) {
+        QMessageBox::information(this, "Denied", msg);
+        NetworkManager::getInstance()->getPendingAuthApplications();
+    });
+    connect(NetworkManager::getInstance(), &NetworkManager::authApplicationFailed, this, [this](const QString &err) {
+        QMessageBox::warning(this, "Error", err);
+    });
 
     // Connect tab change to trigger API calls
     connect(ui->tabWidget, &QTabWidget::currentChanged, this, [this](int idx) {
@@ -72,10 +84,13 @@ void manager_dashboard::initAuthApplicationsTab()
 
 void manager_dashboard::initOrdersAnalysisTab()
 {
+    auto vbox = qobject_cast<QVBoxLayout*>(ui->ordersAnalysisTab->layout());
+    summaryLabel = new QLabel("", this);
+    vbox->insertWidget(0, summaryLabel);
     auto table = new QTableWidget(0, 6, this);
     table->setHorizontalHeaderLabels({"OrderID", "Customer", "Restaurant", "Amount", "Status", "CreatedAt"});
     table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    ui->ordersAnalysisTab->layout()->addWidget(table);
+    vbox->addWidget(table);
     ordersTable = table;
 }
 
@@ -114,9 +129,12 @@ void manager_dashboard::onAllOrdersAndUsersReceived(const QJsonObject &data)
     }
     // Orders Table
     ordersTable->setRowCount(0);
+    int totalOrders = 0;
+    int totalRevenue = 0;
     if (data.contains("orders")) {
         QJsonArray orders = data["orders"].toArray();
         int row = 0;
+        totalOrders = orders.size();
         for (const QJsonValue &val : orders) {
             QJsonObject o = val.toObject();
             ordersTable->insertRow(row);
@@ -126,8 +144,17 @@ void manager_dashboard::onAllOrdersAndUsersReceived(const QJsonObject &data)
             ordersTable->setItem(row, 3, new QTableWidgetItem(QString::number(o["totalAmount"].toInt())));
             ordersTable->setItem(row, 4, new QTableWidgetItem(o["status"].toString()));
             ordersTable->setItem(row, 5, new QTableWidgetItem(o["createdAt"].toString()));
+            totalRevenue += o["totalAmount"].toInt();
             row++;
         }
+    }
+    int totalUsers = 0;
+    if (data.contains("users")) {
+        totalUsers = data["users"].toArray().size();
+    }
+    if (summaryLabel) {
+        summaryLabel->setText(QString("Total Orders: %1 | Total Users: %2 | Total Revenue: %3 Tooman")
+            .arg(totalOrders).arg(totalUsers).arg(totalRevenue));
     }
 }
 
@@ -146,13 +173,13 @@ void manager_dashboard::onPendingAuthApplicationsReceived(const QJsonArray &apps
         // Approve button
         QPushButton *approveBtn = new QPushButton("Approve");
         connect(approveBtn, &QPushButton::clicked, this, [this, obj]() {
-            // TODO: Implement approve logic
+            NetworkManager::getInstance()->approveAuthApplication(obj["id"].toInt());
         });
         authAppsTable->setCellWidget(row, 5, approveBtn);
         // Deny button
         QPushButton *denyBtn = new QPushButton("Deny");
         connect(denyBtn, &QPushButton::clicked, this, [this, obj]() {
-            // TODO: Implement deny logic
+            NetworkManager::getInstance()->denyAuthApplication(obj["id"].toInt());
         });
         authAppsTable->setCellWidget(row, 6, denyBtn);
         row++;

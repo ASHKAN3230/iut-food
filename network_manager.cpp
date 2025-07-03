@@ -165,6 +165,20 @@ void NetworkManager::getAllOrdersAndUsers() {
     sendRequest("/api/debug/orders", "GET");
 }
 
+void NetworkManager::approveAuthApplication(int applicationId) {
+    QJsonObject data;
+    data["applicationId"] = applicationId;
+    data["is_auth"] = 1;
+    sendRequest("/api/restaurants/auth-status", "POST", data);
+}
+
+void NetworkManager::denyAuthApplication(int applicationId) {
+    QJsonObject data;
+    data["applicationId"] = applicationId;
+    data["is_auth"] = 0;
+    sendRequest("/api/restaurants/auth-status", "POST", data);
+}
+
 void NetworkManager::sendRequest(const QString &endpoint, const QString &method, const QJsonObject &data)
 {
     QNetworkRequest request = createRequest(endpoint);
@@ -292,6 +306,18 @@ void NetworkManager::handleResponse(QNetworkReply *reply, const QString &operati
     } else if (operation == "/api/debug/orders" && reply->property("method").toString() == "GET") {
         if (doc.isObject()) {
             emit allOrdersAndUsersReceived(doc.object());
+        }
+        return;
+    } else if (operation == "/api/restaurants/auth-status" && reply->property("method").toString() == "POST") {
+        if (response.contains("error")) {
+            emit authApplicationFailed(response["error"].toString());
+        } else if (response.contains("message")) {
+            QString msg = response["message"].toString();
+            if (msg.contains("approved", Qt::CaseInsensitive)) {
+                emit authApplicationApproved(msg);
+            } else if (msg.contains("denied", Qt::CaseInsensitive)) {
+                emit authApplicationDenied(msg);
+            }
         }
         return;
     }
