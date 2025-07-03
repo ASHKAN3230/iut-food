@@ -525,7 +525,7 @@ void customer::populateOrderTables(const QJsonArray &orders) {
             connect(detailsBtn, &QPushButton::clicked, this, [this, orderCopy]() {
                 showOrderDetails(orderCopy);
             });
-            if (status == "completed") {
+            if (status == "delivered") {
                 if (rating > 0) {
                     // 4a. If already rated, show the View Rate button
                     QPushButton *viewRateBtn = new QPushButton("View Rate");
