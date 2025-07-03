@@ -6,6 +6,7 @@
 #include "menu_restaurant.h"
 #include "restaurant_auth.h"
 #include "network_manager.h"
+#include "manager_dashboard.h"
 #include <QMessageBox>
 
 MainWindow::MainWindow(QWidget *parent)
@@ -100,9 +101,9 @@ void MainWindow::onLoginSuccess(const QJsonObject &userInfo)
         disconnect(netManager, nullptr, this, nullptr);
         this->close();
     } else if (userType == "manager") {
-        menu_restaurant *mr = new menu_restaurant(username, -1);
-        mr->setAttribute(Qt::WA_DeleteOnClose);
-        mr->showMaximized();
+        manager_dashboard *md = new manager_dashboard(username);
+        md->setAttribute(Qt::WA_DeleteOnClose);
+        md->showMaximized();
         NetworkManager* netManager = NetworkManager::getInstance();
         disconnect(netManager, nullptr, this, nullptr);
         this->close();

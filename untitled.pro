@@ -26,7 +26,8 @@ SOURCES += \
     restaurant_auth.cpp \
     server.cpp \
     shopping_basket.cpp \
-    sign_in.cpp
+    sign_in.cpp \
+    manager_dashboard.cpp
 
 HEADERS += \
     clicklabel.h \
@@ -41,7 +42,8 @@ HEADERS += \
     restaurant_auth.h \
     server.h \
     shopping_basket.h \
-    sign_in.h
+    sign_in.h \
+    manager_dashboard.h
 
 FORMS += \
     customer.ui \
@@ -52,7 +54,8 @@ FORMS += \
     rate.ui \
     restaurant_auth.ui \
     shopping_basket.ui \
-    sign_in.ui
+    sign_in.ui \
+    manager_dashboard.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
