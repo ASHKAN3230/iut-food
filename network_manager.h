@@ -50,6 +50,9 @@ public:
 
     void createRestaurant(const QJsonObject &data);
 
+    void getPendingAuthApplications();
+    void getAllOrdersAndUsers();
+
 signals:
     // Authentication signals
     void loginSuccess(const QJsonObject &userInfo);
@@ -83,6 +86,9 @@ signals:
     void serverHealthFailed(const QString &error);
     void networkError(const QString &error);
     void restaurantCreated(bool success);
+
+    void pendingAuthApplicationsReceived(const QJsonArray &apps);
+    void allOrdersAndUsersReceived(const QJsonObject &data);
 
 private:
     NetworkManager(QObject *parent = nullptr);

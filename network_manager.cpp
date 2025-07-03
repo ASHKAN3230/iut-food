@@ -157,6 +157,14 @@ void NetworkManager::forgotPassword(const QString &username, const QString &newP
     sendRequest("/api/forgot-password", "POST", data);
 }
 
+void NetworkManager::getPendingAuthApplications() {
+    sendRequest("/api/restaurants/pending-auth", "GET");
+}
+
+void NetworkManager::getAllOrdersAndUsers() {
+    sendRequest("/api/debug/orders", "GET");
+}
+
 void NetworkManager::sendRequest(const QString &endpoint, const QString &method, const QJsonObject &data)
 {
     QNetworkRequest request = createRequest(endpoint);
@@ -274,6 +282,16 @@ void NetworkManager::handleResponse(QNetworkReply *reply, const QString &operati
             emit forgotPasswordFailed(response["error"].toString());
         } else {
             emit forgotPasswordSuccess(response["message"].toString());
+        }
+        return;
+    } else if (operation == "/api/restaurants/pending-auth" && reply->property("method").toString() == "GET") {
+        if (doc.isArray()) {
+            emit pendingAuthApplicationsReceived(doc.array());
+        }
+        return;
+    } else if (operation == "/api/debug/orders" && reply->property("method").toString() == "GET") {
+        if (doc.isObject()) {
+            emit allOrdersAndUsersReceived(doc.object());
         }
         return;
     }

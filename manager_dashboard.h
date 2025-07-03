@@ -2,6 +2,7 @@
 #define MANAGER_DASHBOARD_H
 
 #include <QWidget>
+#include <QTableWidget>
 
 namespace Ui {
 class manager_dashboard;
@@ -18,6 +19,19 @@ public:
 private:
     Ui::manager_dashboard *ui;
     QString currentManagerUsername;
+    void initRestaurantsTab();
+    void initUsersTab();
+    void initAuthApplicationsTab();
+    void initOrdersAnalysisTab();
+    QTableWidget *restaurantsTable = nullptr;
+    QTableWidget *usersTable = nullptr;
+    QTableWidget *authAppsTable = nullptr;
+    QTableWidget *ordersTable = nullptr;
+
+private slots:
+    void onRestaurantsReceived(const QJsonArray &restaurants);
+    void onPendingAuthApplicationsReceived(const QJsonArray &apps);
+    void onAllOrdersAndUsersReceived(const QJsonObject &data);
 };
 
 #endif // MANAGER_DASHBOARD_H 
