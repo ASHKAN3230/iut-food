@@ -240,24 +240,6 @@
          <column/>
         </widget>
        </item>
-       <item>
-        <layout class="QHBoxLayout" name="ordersButtonLayout">
-         <item>
-          <widget class="QPushButton" name="refreshOrdersButton">
-           <property name="text">
-            <string>Refresh</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="updateStatusButton">
-           <property name="text">
-            <string>Update Status</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
       </layout>
      </widget>
      <widget class="QWidget" name="profileTab">

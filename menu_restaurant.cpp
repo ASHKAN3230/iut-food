@@ -28,6 +28,7 @@
 #include <QNetworkRequest>
 #include <QEvent>
 #include <QFocusEvent>
+#include <QTimer>
 
 menu_restaurant::menu_restaurant(const QString &username, int restaurantId, int userId, QWidget *parent)
     : QWidget(parent)
@@ -58,8 +59,6 @@ menu_restaurant::menu_restaurant(const QString &username, int restaurantId, int 
     connect(ui->editFoodButton, &QPushButton::clicked, this, &menu_restaurant::on_editFoodButton_clicked);
     connect(ui->clearFormButton, &QPushButton::clicked, this, &menu_restaurant::on_clearFormButton_clicked);
     connect(ui->menuTableWidget, &QTableWidget::itemClicked, this, &menu_restaurant::on_menuItem_selected);
-    connect(ui->refreshOrdersButton, &QPushButton::clicked, this, &menu_restaurant::on_refreshOrdersButton_clicked);
-    connect(ui->updateStatusButton, &QPushButton::clicked, this, &menu_restaurant::on_updateStatusButton_clicked);
     // Profile tab logic
     connect(ui->saveProfileButton, &QPushButton::clicked, this, &menu_restaurant::on_saveProfileButton_clicked);
     disconnect(ui->applyAuthButton, &QPushButton::clicked, this, &menu_restaurant::on_applyAuthButton_clicked);
@@ -75,7 +74,11 @@ menu_restaurant::menu_restaurant(const QString &username, int restaurantId, int 
     if (currentRestaurantId <= 0) {
         getRestaurantInfo();
     }
-    // Load menu and orders using network manager
+    // Set up periodic order fetching (every 10 seconds)
+    QTimer *orderFetchTimer = new QTimer(this);
+    connect(orderFetchTimer, &QTimer::timeout, this, [this]() { loadOrdersFromServer(); });
+    orderFetchTimer->start(10000); // 10 seconds
+    // Initial load
     if (currentRestaurantId > 0) {
         loadMenuFromServer();
         loadOrdersFromServer();
@@ -144,14 +147,34 @@ void menu_restaurant::onOrdersReceived(const QJsonArray &orders)
         ui->ordersTableWidget->setItem(row, 0, idItem);
         // Customer (Column 1)
         ui->ordersTableWidget->setItem(row, 1, new QTableWidgetItem(order["customerName"].toString()));
-        // Total (Column 2)
-        ui->ordersTableWidget->setItem(row, 2, new QTableWidgetItem(QString::number(order["totalAmount"].toInt())));
-        // Status (Column 3)
-        ui->ordersTableWidget->setItem(row, 3, new QTableWidgetItem(order["status"].toString()));
-        // Date (Column 4)
-        ui->ordersTableWidget->setItem(row, 4, new QTableWidgetItem(order["createdAt"].toString()));
+        // Items (Column 2)
+        ui->ordersTableWidget->setItem(row, 2, new QTableWidgetItem(order["items"].toString()));
+        // Total (Column 3)
+        ui->ordersTableWidget->setItem(row, 3, new QTableWidgetItem(QString::number(order["totalAmount"].toInt())));
+        // Status (Column 4)
+        ui->ordersTableWidget->setItem(row, 4, new QTableWidgetItem(order["status"].toString()));
+        // Date (Column 5)
+        ui->ordersTableWidget->setItem(row, 5, new QTableWidgetItem(order["createdAt"].toString()));
+        // Update Status Button (Column 6)
+        QPushButton *updateStatusBtn = new QPushButton("Update Status");
+        updateStatusBtn->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+        updateStatusBtn->resize(updateStatusBtn->sizeHint());
+        ui->ordersTableWidget->setCellWidget(row, 6, updateStatusBtn);
+        int orderId = order["id"].toInt();
+        connect(updateStatusBtn, &QPushButton::clicked, this, [this, orderId]() {
+            QStringList statuses = {"Pending", "Preparing", "Out for Delivery", "Delivered", "Cancelled"};
+            bool ok;
+            QString newStatus = QInputDialog::getItem(this, "Update Order Status", "Select the new status for the order:", statuses, 0, false, &ok);
+            if (ok && !newStatus.isEmpty()) {
+                NetworkManager* netManager = NetworkManager::getInstance();
+                netManager->updateOrderStatus(orderId, newStatus);
+                loadOrdersFromServer();
+            }
+        });
         rowCount++;
     }
+    // Set the last column (Update Status) to resize to contents
+    ui->ordersTableWidget->horizontalHeader()->setSectionResizeMode(6, QHeaderView::ResizeToContents);
 }
 
 void menu_restaurant::onOrderCreated(const QString &message)
@@ -365,34 +388,6 @@ void menu_restaurant::on_menuItem_selected()
     selectedFoodName = foodName;
 }
 
-void menu_restaurant::on_refreshOrdersButton_clicked()
-{
-    loadOrdersFromServer();
-}
-
-void menu_restaurant::on_updateStatusButton_clicked()
-{
-    QList<QTableWidgetItem*> selectedItems = ui->ordersTableWidget->selectedItems();
-    if (selectedItems.isEmpty()) {
-        QMessageBox::warning(this, "Selection Error", "Please select an order to update.");
-        return;
-    }
-
-    int selectedRow = selectedItems.first()->row();
-    int orderId = ui->ordersTableWidget->item(selectedRow, 0)->data(Qt::UserRole).toInt();
-
-    // Get new status from user
-    QStringList statuses = {"Pending", "Preparing", "Out for Delivery", "Delivered", "Cancelled"};
-    bool ok;
-    QString newStatus = QInputDialog::getItem(this, "Update Order Status", "Select the new status for the order:", statuses, 0, false, &ok);
-
-    if (ok && !newStatus.isEmpty()) {
-        // Use network manager to update order status
-        NetworkManager* netManager = NetworkManager::getInstance();
-        netManager->updateOrderStatus(orderId, newStatus);
-    }
-}
-
 void menu_restaurant::onMenuItemAdded(const QString &message)
 {
     // Refresh menu from server after successful addition
@@ -444,8 +439,8 @@ void menu_restaurant::on_saveProfileButton_clicked()
 void menu_restaurant::populate_orders_table()
 {
     if (!ui || !ui->ordersTableWidget) return;
-    ui->ordersTableWidget->setColumnCount(5);
-    ui->ordersTableWidget->setHorizontalHeaderLabels({"ID", "Customer", "Total Price", "Status", "Date"});
+    ui->ordersTableWidget->setColumnCount(7);
+    ui->ordersTableWidget->setHorizontalHeaderLabels({"ID", "Customer", "Items", "Total Price", "Status", "Date", "Update Status"});
     ui->ordersTableWidget->setColumnHidden(0, true); // Hide the ID column
     ui->ordersTableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     ui->ordersTableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);

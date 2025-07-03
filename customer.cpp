@@ -488,7 +488,7 @@ void customer::populateOrderTables(const QJsonArray &orders) {
         QJsonObject obj = val.toObject();
         qDebug() << "Order object after rating:" << obj; // DEBUG PRINT
         QString status = obj["status"].toString().toLower();
-        bool isCompleted = (status == "completed" || status == "cancelled");
+        bool isCompleted = (status == "delivered" || status == "cancelled");
         QTableWidget *table = isCompleted ? completedTable : currentTable;
         int row = table->rowCount();
         table->insertRow(row);

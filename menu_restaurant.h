@@ -70,10 +70,6 @@ public slots:
 
     void on_menuItem_selected();
 
-    void on_refreshOrdersButton_clicked();
-
-    void on_updateStatusButton_clicked();
-    
     // Network manager slots
     void onMenuReceived(const QJsonArray &menu);
     void onOrdersReceived(const QJsonArray &orders);
