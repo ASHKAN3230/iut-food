@@ -59,6 +59,8 @@ public:
     void removeRestaurant(int restaurantId);
     void removeUser(int userId);
 
+    void rateOrder(int orderId, int rating);
+
 signals:
     // Authentication signals
     void loginSuccess(const QJsonObject &userInfo);

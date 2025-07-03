@@ -24,6 +24,7 @@
 #include <QTabWidget>
 #include <QComboBox>
 #include <QDebug>
+#include <QInputDialog>
 
 customer::customer(const QString &username, int userId, QWidget *parent)
     : QWidget(parent)
@@ -493,12 +494,44 @@ void customer::populateOrderTables(const QJsonArray &orders) {
             currentTotal += obj["totalAmount"].toInt();
         }
         if (isCompleted) {
+            int rating = obj.contains("rating") ? obj["rating"].toInt() : 0;
+            QWidget *actionWidget = new QWidget;
+            QHBoxLayout *actionLayout = new QHBoxLayout(actionWidget);
+            actionLayout->setContentsMargins(0, 0, 0, 0);
+            actionLayout->setSpacing(4);
             QPushButton *detailsBtn = new QPushButton("Details");
-            table->setCellWidget(row, 5, detailsBtn);
+            actionLayout->addWidget(detailsBtn);
             QJsonObject orderCopy = obj;
             connect(detailsBtn, &QPushButton::clicked, this, [this, orderCopy]() {
                 showOrderDetails(orderCopy);
             });
+            if (status == "completed") {
+                if (rating > 0) {
+                    QLabel *ratedLabel = new QLabel(QString("Rated: %1/5").arg(rating));
+                    actionLayout->addWidget(ratedLabel);
+                } else {
+                    QPushButton *rateBtn = new QPushButton("Rate");
+                    actionLayout->addWidget(rateBtn);
+                    int orderId = obj["id"].toInt();
+                    connect(rateBtn, &QPushButton::clicked, this, [this, orderId, restaurantText]() {
+                        bool ok = false;
+                        int rating = QInputDialog::getInt(this, "Rate Order", "Rate your order at " + restaurantText + ":", 5, 1, 5, 1, &ok);
+                        if (ok) {
+                            NetworkManager* netManager = NetworkManager::getInstance();
+                            connect(netManager, &NetworkManager::orderStatusUpdated, this, [this](const QString &msg) {
+                                QMessageBox::information(this, "Order Rated", msg);
+                                fetchAndDisplayOrders();
+                            });
+                            connect(netManager, &NetworkManager::orderStatusUpdateFailed, this, [this](const QString &err) {
+                                QMessageBox::warning(this, "Rate Failed", err);
+                            });
+                            netManager->rateOrder(orderId, rating);
+                        }
+                    });
+                }
+            }
+            actionWidget->setLayout(actionLayout);
+            table->setCellWidget(row, 5, actionWidget);
         } else {
             QPushButton *deleteBtn = new QPushButton("Delete");
             table->setCellWidget(row, 5, deleteBtn);
