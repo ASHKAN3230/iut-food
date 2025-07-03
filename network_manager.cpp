@@ -179,6 +179,18 @@ void NetworkManager::denyAuthApplication(int applicationId) {
     sendRequest("/api/restaurants/auth-status", "POST", data);
 }
 
+void NetworkManager::removeRestaurant(int restaurantId)
+{
+    QString endpoint = QString("/api/restaurants/%1").arg(restaurantId);
+    sendRequest(endpoint, "DELETE");
+}
+
+void NetworkManager::removeUser(int userId)
+{
+    QString endpoint = QString("/api/users/%1").arg(userId);
+    sendRequest(endpoint, "DELETE");
+}
+
 void NetworkManager::sendRequest(const QString &endpoint, const QString &method, const QJsonObject &data)
 {
     QNetworkRequest request = createRequest(endpoint);

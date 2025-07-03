@@ -56,6 +56,9 @@ public:
     void approveAuthApplication(int applicationId);
     void denyAuthApplication(int applicationId);
 
+    void removeRestaurant(int restaurantId);
+    void removeUser(int userId);
+
 signals:
     // Authentication signals
     void loginSuccess(const QJsonObject &userInfo);

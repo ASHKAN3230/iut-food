@@ -7,6 +7,7 @@
 #include <QPushButton>
 #include <QHeaderView>
 #include <QMessageBox>
+#include <QSizePolicy>
 
 manager_dashboard::manager_dashboard(const QString &username, QWidget *parent)
     : QWidget(parent)
@@ -48,6 +49,19 @@ manager_dashboard::manager_dashboard(const QString &username, QWidget *parent)
             NetworkManager::getInstance()->getAllOrdersAndUsers();
         }
     });
+
+    // Fetch data for the initially selected tab
+    int initialTab = ui->tabWidget->currentIndex();
+    QString tabName = ui->tabWidget->widget(initialTab)->objectName();
+    if (tabName == "authApplicationsTab") {
+        NetworkManager::getInstance()->getPendingAuthApplications();
+    } else if (tabName == "ordersAnalysisTab") {
+        NetworkManager::getInstance()->getAllOrdersAndUsers();
+    } else if (tabName == "restaurantsTab") {
+        NetworkManager::getInstance()->getRestaurants();
+    } else if (tabName == "usersTab") {
+        NetworkManager::getInstance()->getAllOrdersAndUsers();
+    }
 }
 
 manager_dashboard::~manager_dashboard()
@@ -57,8 +71,8 @@ manager_dashboard::~manager_dashboard()
 
 void manager_dashboard::initRestaurantsTab()
 {
-    auto table = new QTableWidget(0, 5, this);
-    table->setHorizontalHeaderLabels({"ID", "Name", "Type", "Location", "Description"});
+    auto table = new QTableWidget(0, 6, this);
+    table->setHorizontalHeaderLabels({"ID", "Name", "Type", "Location", "Description", "Remove"});
     table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     ui->restaurantsTab->layout()->addWidget(table);
     restaurantsTable = table;
@@ -66,8 +80,8 @@ void manager_dashboard::initRestaurantsTab()
 
 void manager_dashboard::initUsersTab()
 {
-    auto table = new QTableWidget(0, 4, this);
-    table->setHorizontalHeaderLabels({"ID", "Username", "Type", "RestaurantID"});
+    auto table = new QTableWidget(0, 5, this);
+    table->setHorizontalHeaderLabels({"ID", "Username", "Type", "RestaurantID", "Remove"});
     table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     ui->usersTab->layout()->addWidget(table);
     usersTable = table;
@@ -106,6 +120,24 @@ void manager_dashboard::onRestaurantsReceived(const QJsonArray &restaurants)
         restaurantsTable->setItem(row, 2, new QTableWidgetItem(obj["type"].toString()));
         restaurantsTable->setItem(row, 3, new QTableWidgetItem(obj["location"].toString()));
         restaurantsTable->setItem(row, 4, new QTableWidgetItem(obj["description"].toString()));
+        QPushButton *removeBtn = new QPushButton("Remove");
+        removeBtn->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+        QSize sz = removeBtn->sizeHint();
+        removeBtn->setMinimumSize(sz);
+        removeBtn->setMaximumSize(sz);
+        int restaurantId = obj["id"].toInt();
+        connect(removeBtn, &QPushButton::clicked, this, [this, restaurantId]() {
+            if (QMessageBox::question(this, "Remove Restaurant", "Are you sure you want to remove this restaurant?") == QMessageBox::Yes) {
+                NetworkManager* net = NetworkManager::getInstance();
+                connect(net, &NetworkManager::restaurantsReceived, this, [this](const QJsonArray &){
+                    // Disconnect after first refresh to avoid duplicate refreshes
+                    disconnect(NetworkManager::getInstance(), &NetworkManager::restaurantsReceived, this, nullptr);
+                });
+                net->removeRestaurant(restaurantId);
+                net->getRestaurants();
+            }
+        });
+        restaurantsTable->setCellWidget(row, 5, removeBtn);
         row++;
     }
 }
@@ -124,6 +156,24 @@ void manager_dashboard::onAllOrdersAndUsersReceived(const QJsonObject &data)
             usersTable->setItem(row, 1, new QTableWidgetItem(u["username"].toString()));
             usersTable->setItem(row, 2, new QTableWidgetItem(u["userType"].toString()));
             usersTable->setItem(row, 3, new QTableWidgetItem(u["restaurantId"].isNull() ? "-" : QString::number(u["restaurantId"].toInt())));
+            QPushButton *removeBtn = new QPushButton("Remove");
+            removeBtn->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+            QSize sz = removeBtn->sizeHint();
+            removeBtn->setMinimumSize(sz);
+            removeBtn->setMaximumSize(sz);
+            int userId = u["id"].toInt();
+            connect(removeBtn, &QPushButton::clicked, this, [this, userId]() {
+                if (QMessageBox::question(this, "Remove User", "Are you sure you want to remove this user?") == QMessageBox::Yes) {
+                    NetworkManager* net = NetworkManager::getInstance();
+                    connect(net, &NetworkManager::allOrdersAndUsersReceived, this, [this](const QJsonObject &){
+                        // Disconnect after first refresh to avoid duplicate refreshes
+                        disconnect(NetworkManager::getInstance(), &NetworkManager::allOrdersAndUsersReceived, this, nullptr);
+                    });
+                    net->removeUser(userId);
+                    net->getAllOrdersAndUsers();
+                }
+            });
+            usersTable->setCellWidget(row, 4, removeBtn);
             row++;
         }
     }
