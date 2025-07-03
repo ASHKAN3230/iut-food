@@ -25,6 +25,7 @@
 #include <QComboBox>
 #include <QDebug>
 #include <QInputDialog>
+#include "rate_dialog.h"
 
 customer::customer(const QString &username, int userId, QWidget *parent)
     : QWidget(parent)
@@ -485,7 +486,7 @@ void customer::populateOrderTables(const QJsonArray &orders) {
     int currentTotal = 0;
     for (const QJsonValue &val : orders) {
         QJsonObject obj = val.toObject();
-        qDebug() << "Order object:" << obj; // DEBUG PRINT
+        qDebug() << "Order object after rating:" << obj; // DEBUG PRINT
         QString status = obj["status"].toString().toLower();
         bool isCompleted = (status == "completed" || status == "cancelled");
         QTableWidget *table = isCompleted ? completedTable : currentTable;
@@ -526,25 +527,56 @@ void customer::populateOrderTables(const QJsonArray &orders) {
             });
             if (status == "completed") {
                 if (rating > 0) {
-                    QLabel *ratedLabel = new QLabel(QString("Rated: %1/5").arg(rating));
-                    actionLayout->addWidget(ratedLabel);
+                    // 4a. If already rated, show the View Rate button
+                    QPushButton *viewRateBtn = new QPushButton("View Rate");
+                    actionLayout->addWidget(viewRateBtn);
+                    QString comment = obj.contains("comment") ? obj["comment"].toString() : "";
+                    int orderRating = rating;
+                    connect(viewRateBtn, &QPushButton::clicked, this, [orderRating, comment, restaurantText, this]() {
+                        // Show a read-only dialog with the rating and comment
+                        QDialog dlg(this);
+                        dlg.setWindowTitle("View Rating");
+                        QVBoxLayout *layout = new QVBoxLayout(&dlg);
+                        QLabel *label = new QLabel("Your rating for " + restaurantText + ":", &dlg);
+                        layout->addWidget(label);
+                        QLabel *rateLabel = new QLabel(QString("Rating: %1/5").arg(orderRating), &dlg);
+                        layout->addWidget(rateLabel);
+                        if (!comment.isEmpty()) {
+                            QLabel *commentLabel = new QLabel("Comment:", &dlg);
+                            layout->addWidget(commentLabel);
+                            QLabel *commentText = new QLabel(comment, &dlg);
+                            commentText->setWordWrap(true);
+                            layout->addWidget(commentText);
+                        }
+                        QPushButton *okBtn = new QPushButton("OK", &dlg);
+                        layout->addWidget(okBtn);
+                        connect(okBtn, &QPushButton::clicked, &dlg, &QDialog::accept);
+                        dlg.setLayout(layout);
+                        dlg.exec();
+                    });
                 } else {
+                    // 4b. If not rated, show the Rate button
                     QPushButton *rateBtn = new QPushButton("Rate");
                     actionLayout->addWidget(rateBtn);
                     int orderId = obj["id"].toInt();
                     connect(rateBtn, &QPushButton::clicked, this, [this, orderId, restaurantText]() {
-                        bool ok = false;
-                        int rating = QInputDialog::getInt(this, "Rate Order", "Rate your order at " + restaurantText + ":", 5, 1, 5, 1, &ok);
-                        if (ok) {
+                        // 5. Show a custom dialog to get the rating and comment from the user
+                        RateDialog dlg(restaurantText, this);
+                        if (dlg.exec() == QDialog::Accepted) {
+                            int rating = dlg.rating();
+                            QString comment = dlg.comment();
+                            // 6. Send the rating and comment to the backend using NetworkManager
                             NetworkManager* netManager = NetworkManager::getInstance();
                             connect(netManager, &NetworkManager::orderStatusUpdated, this, [this](const QString &msg) {
+                                // 7. On success, show a message and refresh orders
                                 QMessageBox::information(this, "Order Rated", msg);
                                 fetchAndDisplayOrders();
                             });
                             connect(netManager, &NetworkManager::orderStatusUpdateFailed, this, [this](const QString &err) {
+                                // 8. On failure, show an error
                                 QMessageBox::warning(this, "Rate Failed", err);
                             });
-                            netManager->rateOrder(orderId, rating);
+                            netManager->rateOrder(orderId, rating, comment);
                         }
                     });
                 }

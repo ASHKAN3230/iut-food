@@ -191,10 +191,11 @@ void NetworkManager::removeUser(int userId)
     sendRequest(endpoint, "DELETE");
 }
 
-void NetworkManager::rateOrder(int orderId, int rating)
+void NetworkManager::rateOrder(int orderId, int rating, const QString &comment)
 {
     QJsonObject data;
     data["rating"] = rating;
+    data["comment"] = comment;
     QString endpoint = QString("/api/orders/%1/rate").arg(orderId);
     sendRequest(endpoint, "PUT", data);
 }

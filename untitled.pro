@@ -27,7 +27,8 @@ SOURCES += \
     server.cpp \
     shopping_basket.cpp \
     sign_in.cpp \
-    manager_dashboard.cpp
+    manager_dashboard.cpp \
+    rate_dialog.cpp
 
 HEADERS += \
     clicklabel.h \
@@ -43,7 +44,8 @@ HEADERS += \
     server.h \
     shopping_basket.h \
     sign_in.h \
-    manager_dashboard.h
+    manager_dashboard.h \
+    rate_dialog.h
 
 FORMS += \
     customer.ui \

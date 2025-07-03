@@ -59,7 +59,7 @@ public:
     void removeRestaurant(int restaurantId);
     void removeUser(int userId);
 
-    void rateOrder(int orderId, int rating);
+    void rateOrder(int orderId, int rating, const QString &comment);
 
 signals:
     // Authentication signals
