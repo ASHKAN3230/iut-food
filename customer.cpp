@@ -40,6 +40,7 @@ customer::customer(const QString &username, int userId, QWidget *parent)
     ui->filterComboBox->addItem("Restaurant");
     ui->filterComboBox->addItem("Dessert");
     connect(ui->filterComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &customer::on_filterComboBox_currentIndexChanged);
+    connect(ui->search_lineedit, &QLineEdit::textChanged, this, &customer::filterAndDisplayRestaurants);
     fetchAndDisplayRestaurants();
     // Connect tab change to fetch orders
     connect(ui->tabWidget, &QTabWidget::currentChanged, this, [this](int idx) {
@@ -290,6 +291,11 @@ void customer::on_filterComboBox_currentIndexChanged(int index) {
 }
 
 void customer::displayRestaurants(const QJsonArray &restaurants) {
+    lastFetchedRestaurants = restaurants;
+    filterAndDisplayRestaurants();
+}
+
+void customer::filterAndDisplayRestaurants() {
     QVBoxLayout *vbox = qobject_cast<QVBoxLayout*>(ui->resultsContainer->layout());
     if (!vbox) return;
     // Clear previous results
@@ -299,23 +305,36 @@ void customer::displayRestaurants(const QJsonArray &restaurants) {
         delete child;
     }
     int cardHeight = 110;
-    int cardCount = restaurants.size();
     int cardSpacing = 6; // px
     QString selectedType = ui->filterComboBox->currentText();
+    QString searchText = ui->search_lineedit->text().trimmed();
     int shownCount = 0;
-    for (int i = 0; i < cardCount; ++i) {
-        const QJsonValue &val = restaurants[i];
+    for (int i = 0; i < lastFetchedRestaurants.size(); ++i) {
+        const QJsonValue &val = lastFetchedRestaurants[i];
         QJsonObject obj = val.toObject();
+        // Filter by type
         if (selectedType != "All" && obj["type"].toString() != selectedType)
             continue;
+        // Filter by search text (name, type, description, location)
+        QString name = obj["name"].toString();
+        QString type = obj["type"].toString();
+        QString desc = obj["description"].toString();
+        QString loc = obj["location"].toString();
+        if (!searchText.isEmpty() &&
+            !name.contains(searchText, Qt::CaseInsensitive) &&
+            !type.contains(searchText, Qt::CaseInsensitive) &&
+            !desc.contains(searchText, Qt::CaseInsensitive) &&
+            !loc.contains(searchText, Qt::CaseInsensitive)) {
+            continue;
+        }
         QWidget *card = new QWidget;
         QHBoxLayout *hbox = new QHBoxLayout(card);
         hbox->setContentsMargins(0, 0, 0, 0);
         hbox->setSpacing(0);
-        QLabel *nameLabel = new QLabel("<b>" + obj["name"].toString() + "</b>");
-        QLabel *typeLabel = new QLabel(obj["type"].toString());
-        QLabel *descLabel = new QLabel(obj["description"].toString());
-        QLabel *locLabel = new QLabel("Location: " + obj["location"].toString());
+        QLabel *nameLabel = new QLabel("<b>" + name + "</b>");
+        QLabel *typeLabel = new QLabel(type);
+        QLabel *descLabel = new QLabel(desc);
+        QLabel *locLabel = new QLabel("Location: " + loc);
         QLabel *priceLabel = new QLabel("Price: " + QString::number(obj["minPrice"].toInt()) + " - " + QString::number(obj["maxPrice"].toInt()));
         QFont infoFont = typeLabel->font();
         infoFont.setPointSize(infoFont.pointSize() - 1);
@@ -346,7 +365,7 @@ void customer::displayRestaurants(const QJsonArray &restaurants) {
         card->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
         card->setStyleSheet("border: 1px solid #cccccc; border-radius: 0px; background: #fff;");
         vbox->addWidget(card);
-        if (shownCount < cardCount - 1) {
+        if (shownCount < lastFetchedRestaurants.size() - 1) {
             vbox->addSpacing(cardSpacing);
         }
         connect(viewMenuBtn, &QPushButton::clicked, [this, obj]() {

@@ -37,6 +37,8 @@ public:
 
     QMap<QString,QMap<QString,QPair<QVector<QString>,QPair<int,int>>>> restaurant_list;
 
+    QJsonArray lastFetchedRestaurants;
+
     ~customer();
 
     // New API-driven UI methods
@@ -47,6 +49,7 @@ public:
     void orderFood(int restaurantId, int foodId, const QString &restaurantName, const QString &foodName, int price);
     void fetchAndDisplayOrders();
     void displayOrders(const QJsonArray &orders);
+    void filterAndDisplayRestaurants();
 
 signals:
 
